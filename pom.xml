@@ -20,7 +20,7 @@
     <description>Employee Service with OpenAI Agent and MCP</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>17</java.version>
         <spring-ai.version>2.0.1</spring-ai.version>
     </properties>
 
