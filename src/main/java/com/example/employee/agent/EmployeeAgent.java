@@ -124,17 +124,12 @@ public class EmployeeAgent {
                     );
 
             /*
-             * Tell OpenAI what function was called.
-             */
-            toolResults.add(
-                    ResponseInputItem.ofFunctionCall(
-                            functionCall
-                    )
-            );
-
-            /*
-             * Return the result of our Java function
-             * back to the AI model.
+             * Return the result of our Java function back to the AI
+             * model. The function_call item itself doesn't need to be
+             * resent here — previousResponseId(response.id()) already
+             * carries it as part of that response's state; resending it
+             * causes OpenAI to reject the request with a "Duplicate item
+             * found" error.
              */
             toolResults.add(
                     ResponseInputItem.ofFunctionCallOutput(
@@ -164,6 +159,7 @@ public class EmployeeAgent {
                 ResponseCreateParams.builder()
                         .model(ChatModel.GPT_5_2)
                         .instructions(instructions)
+                        .previousResponseId(response.id())
                         .input(
                                 ResponseCreateParams.Input.ofResponse(
                                         toolResults
@@ -195,7 +191,7 @@ public class EmployeeAgent {
                     GetEmployeeTool.execute(arguments, employeeTools, objectMapper);
 
             case ListEmployeesTool.NAME ->
-                    ListEmployeesTool.execute(employeeTools, objectMapper);
+                    ListEmployeesTool.execute(employeeTools);
 
             case SearchEmployeeTool.NAME ->
                     SearchEmployeeTool.execute(arguments, employeeTools, objectMapper);
@@ -210,16 +206,27 @@ public class EmployeeAgent {
 
     /**
      * Extract text from the OpenAI response.
+     *
+     * With reasoning models, a response can occasionally come back with no
+     * message/output_text item at all (e.g. the model spent its output on
+     * a reasoning item without producing a final answer), which would
+     * otherwise silently surface as a blank reply to the user.
      */
     private String extractText(Response response) {
 
-        return response.output()
+        String text = response.output()
                 .stream()
                 .flatMap(item -> item.message().stream())
                 .flatMap(message -> message.content().stream())
                 .flatMap(content -> content.outputText().stream())
-                .map(outputText -> outputText.text())
-                .reduce("", String::concat);
+                .map(outputText -> outputText.text() == null ? "" : outputText.text())
+                .reduce("", (left, right) -> left + right);
+
+        if (text.isBlank()) {
+            return "I couldn't generate a response to that. Please try rephrasing your question.";
+        }
+
+        return text;
     }
 
     /**
@@ -247,12 +254,14 @@ public class EmployeeAgent {
                                 "required",
                                 JsonValue.from(List.of("employeeId"))
                         )
+                        .putAdditionalProperty("additionalProperties", JsonValue.from(false))
                         .build();
 
         return FunctionTool.builder()
                 .name(GetEmployeeTool.NAME)
                 .description(GetEmployeeTool.DESCRIPTION)
                 .parameters(parameters)
+                .strict(true)
                 .build();
     }
 
@@ -270,12 +279,14 @@ public class EmployeeAgent {
                         .putAdditionalProperty("type", JsonValue.from("object"))
                         .putAdditionalProperty("properties", JsonValue.from(Map.of()))
                         .putAdditionalProperty("required", JsonValue.from(List.of()))
+                        .putAdditionalProperty("additionalProperties", JsonValue.from(false))
                         .build();
 
         return FunctionTool.builder()
                 .name(ListEmployeesTool.NAME)
                 .description(ListEmployeesTool.DESCRIPTION)
                 .parameters(parameters)
+                .strict(true)
                 .build();
     }
 
@@ -304,12 +315,14 @@ public class EmployeeAgent {
                                 "required",
                                 JsonValue.from(List.of("name"))
                         )
+                        .putAdditionalProperty("additionalProperties", JsonValue.from(false))
                         .build();
 
         return FunctionTool.builder()
                 .name(SearchEmployeeTool.NAME)
                 .description(SearchEmployeeTool.DESCRIPTION)
                 .parameters(parameters)
+                .strict(true)
                 .build();
     }
 }

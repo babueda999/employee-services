@@ -1,5 +1,7 @@
 package com.example.employee.mcp;
 
+import com.example.employee.agent.tools.GetEmployeeTool;
+import com.example.employee.agent.tools.ListEmployeesTool;
 import com.example.employee.dto.EmployeeResponse;
 import com.example.employee.service.EmployeeService;
 import org.springframework.ai.mcp.annotation.McpTool;
@@ -22,7 +24,7 @@ public class EmployeeMcpTools {
      * Get one employee by ID.
      */
     @McpTool(
-            name = "get_employee",
+            name = GetEmployeeTool.NAME,
             description = "Get an employee by employee ID"
     )
     public EmployeeResponse getEmployee(
@@ -40,7 +42,7 @@ public class EmployeeMcpTools {
      * Get all employees.
      */
     @McpTool(
-            name = "list_employees",
+            name = ListEmployeesTool.NAME,
             description = "List all employees"
     )
     public List<EmployeeResponse> listEmployees() {
