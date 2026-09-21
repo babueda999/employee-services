@@ -10,19 +10,32 @@ employee-servicves-main/
 ├── src/main/java/com/example/employee/
 │   ├── EmployeeApplication.java     @SpringBootApplication entry point
 │   ├── controller/
-│   │   └── EmployeeController.java  REST endpoints, /api/employees
+│   │   ├── EmployeeController.java  REST endpoints, /api/employees
+│   │   └── AgentController.java     REST endpoint, POST /api/agent (natural-language employee queries)
 │   ├── dto/
 │   │   ├── EmployeeRequest.java     Inbound payload, Bean Validation annotations
-│   │   └── EmployeeResponse.java    Outbound payload
+│   │   ├── EmployeeResponse.java    Outbound payload
+│   │   ├── AgentRequest.java        Inbound payload for /api/agent (message, @NotBlank)
+│   │   └── AgentResponse.java       Outbound payload for /api/agent (reply)
 │   ├── entity/
 │   │   └── Employee.java            JPA entity, table "employees", unique email constraint
 │   ├── repository/
 │   │   └── EmployeeRepository.java  Spring Data JPA repository
 │   ├── service/
 │   │   ├── EmployeeService.java     Service interface
-│   │   └── EmployeeServiceImpl.java Business logic, duplicate-email checks
+│   │   ├── EmployeeServiceImpl.java Business logic, duplicate-email checks
+│   │   └── EmployeeAgentService.java  Earlier draft, single OpenAI call with no tool wiring (see note below)
 │   ├── mapper/
 │   │   └── EmployeeMapper.java      Manual DTO <-> Entity mapping (no MapStruct)
+│   ├── agent/
+│   │   ├── EmployeeAgent.java       OpenAI Responses API agent used by AgentController; wires the tools below
+│   │   ├── EmployeeTools.java       Tool implementations (get/list/search), called by EmployeeAgent
+│   │   └── tools/                   FunctionTool name/description constants for GetEmployee/ListEmployees/SearchEmployee
+│   ├── mcp/
+│   │   └── EmployeeMcpTools.java    Spring AI @McpTool-annotated employee tools, exposed via the MCP server
+│   ├── config/
+│   │   └── JacksonConfig.java       com.fasterxml.jackson ObjectMapper bean (needed by agent/ and mcp/ classes,
+│   │                                distinct from the Jackson 3 ObjectMapper Spring Boot 4 uses for the web layer)
 │   └── exception/
 │       ├── EmployeeNotFoundException.java
 │       ├── DuplicateEmployeeException.java
@@ -31,7 +44,11 @@ employee-servicves-main/
 ├── src/main/resources/
 │   └── application.properties       Server port 8080, H2 in-memory DB, JPA/H2 console config
 ├── src/test/java/com/example/employee/
-│   └── EmployeeApplicationTests.java  Spring context load test
+│   ├── EmployeeApplicationTests.java  Spring context load test
+│   ├── controller/, service/, repository/  Layer tests mirroring src/main (see rules/testing.md)
+│   ├── agent/EmployeeAgentTest.java, agent/EmployeeToolsTest.java
+│   ├── service/EmployeeAgentServiceTest.java
+│   └── mcp/EmployeeMcpToolsTest.java
 └── frontend/                        Next.js (App Router) + TypeScript frontend, separate npm project
     ├── app/
     │   ├── page.tsx                 Home, links to /employees
@@ -64,6 +81,23 @@ consistent `ErrorResponse` JSON body.
 - H2 in-memory DB: `jdbc:h2:mem:employeedb`, H2 console at `/h2-console`
 - `spring.jpa.hibernate.ddl-auto=update` — schema is auto-generated/updated from the `Employee` entity
 - `spring.jpa.show-sql=true` — SQL logged to console
+- `spring.ai.mcp.server.*` — Spring AI MCP server (protocol `STREAMABLE`), exposing `EmployeeMcpTools`
+
+## Employee AI agent
+
+`AgentController` (`POST /api/agent`) delegates to `EmployeeAgent`, which uses the OpenAI Responses API with
+three tools (`get_employee`, `list_employees`, `search_employees`) implemented in `EmployeeTools`, which in
+turn calls `EmployeeService`. Both `EmployeeAgent` and the older `EmployeeAgentService` build their
+`OpenAIClient` lazily from environment credentials (`OpenAIOkHttpClient.fromEnv()`) on first use rather than
+in the constructor, so the app starts and `mvn test` passes with no OpenAI credential configured — only an
+actual `/api/agent` request requires one.
+
+**Note:** `EmployeeAgentService` predates `EmployeeAgent` and duplicates its purpose, but sends the user's
+message straight to OpenAI with no tool wiring — despite its system prompt describing employee lookup
+operations, it can't actually perform them. It isn't called from any controller. Treat `EmployeeAgent` as the
+supported implementation; `EmployeeAgentService` is a candidate for removal.
+
+See [api.md](api.md#agent-endpoint) for the request/response shape.
 
 ## Frontend
 
