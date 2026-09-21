@@ -41,6 +41,12 @@
   color: #b91c1c;
 }
 
+.count {
+  color: #52525b;
+  font-size: 0.95rem;
+  margin: -0.5rem 0 1rem;
+}
+
 .backLink {
   display: inline-block;
   margin-bottom: 1rem;

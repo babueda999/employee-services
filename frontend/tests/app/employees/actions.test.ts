@@ -18,14 +18,17 @@ vi.mock("@/lib/employees", async () => {
   };
 });
 
-const redirectMock = vi.fn((url: string) => {
-  throw new Error(`NEXT_REDIRECT:${url}`);
-});
+const { redirectMock, revalidatePathMock } = vi.hoisted(() => ({
+  redirectMock: vi.fn((url: string) => {
+    throw new Error(`NEXT_REDIRECT:${url}`);
+  }),
+  revalidatePathMock: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
 
-const revalidatePathMock = vi.fn();
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));

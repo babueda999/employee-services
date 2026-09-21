@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAllEmployees } from "@/lib/employees";
+import EmployeeCountStat from "./EmployeeCountStat";
 import styles from "./page.module.css";
 
 export default async function Home() {
@@ -21,12 +22,7 @@ export default async function Home() {
           add, edit, and remove employees in a few clicks.
         </p>
 
-        {employeeCount !== null && (
-          <div className={styles.stat}>
-            <span className={styles.statNumber}>{employeeCount}</span>
-            <span>{employeeCount === 1 ? "employee" : "employees"} on record</span>
-          </div>
-        )}
+        <EmployeeCountStat initialCount={employeeCount} />
 
         <div className={styles.actions}>
           <Link href="/employees" className={styles.primary}>
