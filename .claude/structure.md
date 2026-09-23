@@ -23,8 +23,7 @@ employee-servicves-main/
 │   │   └── EmployeeRepository.java  Spring Data JPA repository
 │   ├── service/
 │   │   ├── EmployeeService.java     Service interface
-│   │   ├── EmployeeServiceImpl.java Business logic, duplicate-email checks
-│   │   └── EmployeeAgentService.java  Earlier draft, single OpenAI call with no tool wiring (see note below)
+│   │   └── EmployeeServiceImpl.java Business logic, duplicate-email checks
 │   ├── mapper/
 │   │   └── EmployeeMapper.java      Manual DTO <-> Entity mapping (no MapStruct)
 │   ├── agent/
@@ -47,7 +46,6 @@ employee-servicves-main/
 │   ├── EmployeeApplicationTests.java  Spring context load test
 │   ├── controller/, service/, repository/  Layer tests mirroring src/main (see rules/testing.md)
 │   ├── agent/EmployeeAgentTest.java, agent/EmployeeToolsTest.java
-│   ├── service/EmployeeAgentServiceTest.java
 │   └── mcp/EmployeeMcpToolsTest.java
 └── frontend/                        Next.js (App Router) + TypeScript frontend, separate npm project
     ├── app/
@@ -87,15 +85,9 @@ consistent `ErrorResponse` JSON body.
 
 `AgentController` (`POST /api/agent`) delegates to `EmployeeAgent`, which uses the OpenAI Responses API with
 three tools (`get_employee`, `list_employees`, `search_employees`) implemented in `EmployeeTools`, which in
-turn calls `EmployeeService`. Both `EmployeeAgent` and the older `EmployeeAgentService` build their
-`OpenAIClient` lazily from environment credentials (`OpenAIOkHttpClient.fromEnv()`) on first use rather than
-in the constructor, so the app starts and `mvn test` passes with no OpenAI credential configured — only an
-actual `/api/agent` request requires one.
-
-**Note:** `EmployeeAgentService` predates `EmployeeAgent` and duplicates its purpose, but sends the user's
-message straight to OpenAI with no tool wiring — despite its system prompt describing employee lookup
-operations, it can't actually perform them. It isn't called from any controller. Treat `EmployeeAgent` as the
-supported implementation; `EmployeeAgentService` is a candidate for removal.
+turn calls `EmployeeService`. `EmployeeAgent` builds its `OpenAIClient` lazily from environment credentials
+(`OpenAIOkHttpClient.fromEnv()`) on first use rather than in the constructor, so the app starts and `mvn test`
+passes with no OpenAI credential configured — only an actual `/api/agent` request requires one.
 
 See [api.md](api.md#agent-endpoint) for the request/response shape.
 

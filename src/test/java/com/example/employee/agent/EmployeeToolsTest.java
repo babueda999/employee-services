@@ -52,20 +52,21 @@ class EmployeeToolsTest {
     }
 
     @Test
-    void getEmployee_returnsFailureJson_whenServiceReturnsNull() {
-        when(employeeService.getEmployeeById(1L)).thenReturn(null);
+    void getEmployee_returnsNotFoundJson_whenEmployeeDoesNotExist() {
+        when(employeeService.getEmployeeById(99L))
+                .thenThrow(new EmployeeNotFoundException("Employee not found with id: 99"));
 
-        String result = employeeTools.getEmployee(1L);
+        String result = employeeTools.getEmployee(99L);
 
         assertThat(result).contains("\"success\": false", "Employee not found");
     }
 
     @Test
-    void getEmployee_returnsFailureJson_whenServiceThrows() {
-        when(employeeService.getEmployeeById(99L))
-                .thenThrow(new EmployeeNotFoundException("Employee not found with id: 99"));
+    void getEmployee_returnsFailureJson_whenServiceThrowsUnexpectedException() {
+        when(employeeService.getEmployeeById(1L))
+                .thenThrow(new RuntimeException("database connection lost"));
 
-        String result = employeeTools.getEmployee(99L);
+        String result = employeeTools.getEmployee(1L);
 
         assertThat(result).contains("\"success\": false", "Unable to retrieve employee");
     }
@@ -101,12 +102,25 @@ class EmployeeToolsTest {
     }
 
     @Test
-    void searchEmployees_returnsSerializedList_whenNameProvided() {
+    void searchEmployees_returnsOnlyMatchingEmployees_whenNameProvided() {
+        EmployeeResponse john = sampleResponse(1L);
+        EmployeeResponse jane = new EmployeeResponse(
+                2L, "Jane", "Smith", "jane.smith@example.com", "Sales", 65000.0);
+        when(employeeService.getAllEmployees())
+                .thenReturn(List.of(john, jane));
+
+        String result = employeeTools.searchEmployees("doe");
+
+        assertThat(result).contains("\"id\":1").doesNotContain("\"id\":2");
+    }
+
+    @Test
+    void searchEmployees_returnsEmptyList_whenNoNameMatches() {
         when(employeeService.getAllEmployees())
                 .thenReturn(List.of(sampleResponse(1L)));
 
-        String result = employeeTools.searchEmployees("John");
+        String result = employeeTools.searchEmployees("nonexistent");
 
-        assertThat(result).contains("\"id\":1");
+        assertThat(result).isEqualTo("[]");
     }
 }

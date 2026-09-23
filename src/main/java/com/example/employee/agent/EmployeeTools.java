@@ -1,7 +1,7 @@
 package com.example.employee.agent;
 
 import com.example.employee.dto.EmployeeResponse;
-import com.example.employee.entity.Employee;
+import com.example.employee.exception.EmployeeNotFoundException;
 import com.example.employee.service.EmployeeService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,18 +41,18 @@ public class EmployeeTools {
 
             EmployeeResponse employee = employeeService.getEmployeeById(employeeId);
 
-            if (employee == null) {
-                return """
-                        {
-                          "success": false,
-                          "message": "Employee not found"
-                        }
-                        """;
-            }
-
             return objectMapper.writeValueAsString(
                     employee
             );
+
+        } catch (EmployeeNotFoundException e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Employee not found"
+                    }
+                    """;
 
         } catch (Exception e) {
 
@@ -105,10 +105,17 @@ public class EmployeeTools {
                         """;
             }
 
-            List<EmployeeResponse> employees = employeeService.getAllEmployees();
+            String searchTerm = name.trim().toLowerCase();
+
+            List<EmployeeResponse> matches = employeeService.getAllEmployees()
+                    .stream()
+                    .filter(employee ->
+                            employee.getFirstName().toLowerCase().contains(searchTerm)
+                                    || employee.getLastName().toLowerCase().contains(searchTerm))
+                    .toList();
 
             return objectMapper.writeValueAsString(
-                    employees
+                    matches
             );
 
         } catch (JsonProcessingException e) {

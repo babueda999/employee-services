@@ -24,6 +24,7 @@ Base path: `/api/employees` · Default server port: `8080`
 | GET    | `/api/employees`      | List all employees    | 200 OK  | — |
 | PUT    | `/api/employees/{id}` | Update an employee    | 200 OK  | 400 (validation), 404 (not found), 409 (email used by another employee) |
 | DELETE | `/api/employees/{id}` | Delete an employee    | 204 No Content | 404 (not found) |
+| GET    | `/api/employees/search?name={name}` | Search employees by first/last name (case-insensitive, substring match) | 200 OK | 400 (missing `name` param) |
 
 ### Request body (POST / PUT) — `EmployeeRequest`
 
@@ -95,6 +96,8 @@ All errors (validation, not-found, duplicate, unexpected) are returned as `Error
 | `EmployeeNotFoundException`         | 404         | Employee Not Found     |
 | `DuplicateEmployeeException`        | 409         | Duplicate Employee     |
 | `MethodArgumentNotValidException`   | 400         | Validation Failed (message lists `field: reason` per invalid field, comma-separated) |
+| `MissingServletRequestParameterException` | 400   | Validation Failed (e.g. `GET /api/employees/search` without `name`) |
+| `HttpRequestMethodNotSupportedException` | 405    | Method Not Allowed (e.g. `GET /api/agent`, which only accepts `POST`) |
 | any other `Exception`               | 500         | Internal Server Error  |
 
 ## H2 console

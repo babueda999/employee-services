@@ -1,7 +1,6 @@
 package com.example.employee.agent.tools;
 
 import com.example.employee.agent.EmployeeTools;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ListEmployeesTool {
 
@@ -30,8 +29,7 @@ public class ListEmployeesTool {
      * EmployeeTools performs the actual employee operation.
      */
     public static String execute(
-            EmployeeTools employeeTools,
-            ObjectMapper objectMapper) {
+            EmployeeTools employeeTools) {
 
         try {
 

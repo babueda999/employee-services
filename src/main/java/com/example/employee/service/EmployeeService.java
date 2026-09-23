@@ -22,4 +22,7 @@ public interface EmployeeService {
             EmployeeRequest request);
 
     void deleteEmployee(Long id);
+
+    List<EmployeeResponse> searchEmployeesByName(
+            String name);
 }
