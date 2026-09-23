@@ -141,4 +141,18 @@ public class EmployeeServiceImpl
 
         employeeRepository.deleteById(id);
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployeeResponse> searchEmployeesByName(String name) {
+
+        return employeeRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                        name,
+                        name)
+                .stream()
+                .map(employeeMapper::toResponse)
+                .toList();
+    }
 }

@@ -212,4 +212,32 @@ class EmployeeControllerTest {
         mockMvc.perform(delete("/api/employees/99"))
                 .andExpect(status().isNotFound());
     }
+
+    // --- GET /api/employees/search ---
+
+    @Test
+    void searchEmployees_returns200WithMatches() throws Exception {
+        when(employeeService.searchEmployeesByName("John"))
+                .thenReturn(List.of(sampleResponse(1L)));
+
+        mockMvc.perform(get("/api/employees/search").param("name", "John"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].firstName").value("John"));
+    }
+
+    @Test
+    void searchEmployees_returns200WithEmptyList_whenNoMatches() throws Exception {
+        when(employeeService.searchEmployeesByName("zzz")).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/employees/search").param("name", "zzz"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void searchEmployees_returns400_whenNameMissing() throws Exception {
+        mockMvc.perform(get("/api/employees/search"))
+                .andExpect(status().isBadRequest());
+    }
 }

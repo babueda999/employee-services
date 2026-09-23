@@ -230,4 +230,30 @@ class EmployeeServiceImplTest {
 
         verify(employeeRepository, never()).deleteById(any());
     }
+
+    // --- searchEmployeesByName ---
+
+    @Test
+    void searchEmployeesByName_returnsMappedMatches() {
+        Employee e1 = sampleEmployee(1L);
+        EmployeeResponse r1 = sampleResponse(1L);
+
+        when(employeeRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("John", "John"))
+                .thenReturn(List.of(e1));
+        when(employeeMapper.toResponse(e1)).thenReturn(r1);
+
+        List<EmployeeResponse> result = employeeService.searchEmployeesByName("John");
+
+        assertThat(result).containsExactly(r1);
+    }
+
+    @Test
+    void searchEmployeesByName_returnsEmptyList_whenNoMatches() {
+        when(employeeRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("zzz", "zzz"))
+                .thenReturn(List.of());
+
+        assertThat(employeeService.searchEmployeesByName("zzz")).isEmpty();
+    }
 }

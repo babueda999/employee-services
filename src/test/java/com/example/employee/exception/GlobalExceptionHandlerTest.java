@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.List;
 
@@ -83,6 +85,36 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage())
                 .contains("firstName: First name is required")
                 .contains("email: Invalid email format");
+    }
+
+    @Test
+    void handleMissingServletRequestParameter_returns400WithErrorResponse() {
+        MissingServletRequestParameterException exception =
+                new MissingServletRequestParameterException("name", "String");
+
+        ResponseEntity<ErrorResponse> response =
+                handler.handleMissingServletRequestParameter(exception, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getError()).isEqualTo("Validation Failed");
+        assertThat(response.getBody().getMessage()).isEqualTo(exception.getMessage());
+    }
+
+    @Test
+    void handleMethodNotSupported_returns405WithErrorResponse() {
+        HttpRequestMethodNotSupportedException exception =
+                new HttpRequestMethodNotSupportedException("GET");
+
+        ResponseEntity<ErrorResponse> response =
+                handler.handleMethodNotSupported(exception, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(405);
+        assertThat(response.getBody().getError()).isEqualTo("Method Not Allowed");
+        assertThat(response.getBody().getMessage()).isEqualTo(exception.getMessage());
     }
 
     @Test

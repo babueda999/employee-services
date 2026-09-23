@@ -64,4 +64,38 @@ class EmployeeRepositoryTest {
 
         assertThat(employeeRepository.findAll()).hasSize(2);
     }
+
+    @Test
+    void findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase_matchesFirstName_caseInsensitive() {
+        employeeRepository.save(new Employee("Alice", "Smith", "alice@example.com", "Engineering", 75000.0));
+        employeeRepository.save(new Employee("Bob", "Jones", "bob@example.com", "Sales", 60000.0));
+
+        var results = employeeRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("ALI", "ALI");
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getFirstName()).isEqualTo("Alice");
+    }
+
+    @Test
+    void findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase_matchesLastName_caseInsensitive() {
+        employeeRepository.save(new Employee("Alice", "Smith", "alice@example.com", "Engineering", 75000.0));
+        employeeRepository.save(new Employee("Bob", "Jones", "bob@example.com", "Sales", 60000.0));
+
+        var results = employeeRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("jones", "jones");
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getLastName()).isEqualTo("Jones");
+    }
+
+    @Test
+    void findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase_returnsEmpty_whenNoMatch() {
+        employeeRepository.save(sampleEmployee("john.doe@example.com"));
+
+        var results = employeeRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("zzz", "zzz");
+
+        assertThat(results).isEmpty();
+    }
 }
