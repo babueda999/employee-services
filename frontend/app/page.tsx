@@ -31,6 +31,9 @@ export default async function Home() {
           <Link href="/employees/new" className={styles.secondary}>
             Add employee
           </Link>
+          <Link href="/agent" className={styles.secondary}>
+            Chat with the agent
+          </Link>
         </div>
       </div>
     </div>

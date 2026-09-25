@@ -35,7 +35,13 @@ export async function getAllEmployees(): Promise<Employee[]> {
     throw new ApiError(response.status, await parseErrorBody(response));
   }
 
-  return (await response.json()) as Employee[];
+  const employees = (await response.json()) as Employee[];
+
+  if (employees.length === 0) {
+    console.info("No employee records are available");
+  }
+
+  return employees;
 }
 
 export async function getEmployeeById(id: string): Promise<Employee> {

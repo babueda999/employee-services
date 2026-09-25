@@ -90,28 +90,37 @@ public class EmployeeTools {
     }
 
     /**
-     * Search employees by name.
+     * Search employees by name and/or department. At least one of the two
+     * must be provided; when both are given, an employee must match both.
      */
-    public String searchEmployees(String name) {
+    public String searchEmployees(String name, String department) {
 
         try {
 
-            if (name == null || name.isBlank()) {
+            boolean hasName = name != null && !name.isBlank();
+            boolean hasDepartment = department != null && !department.isBlank();
+
+            if (!hasName && !hasDepartment) {
                 return """
                         {
                           "success": false,
-                          "message": "Search name is required"
+                          "message": "Search name or department is required"
                         }
                         """;
             }
 
-            String searchTerm = name.trim().toLowerCase();
+            String nameTerm = hasName ? name.trim().toLowerCase() : null;
+            String departmentTerm = hasDepartment ? department.trim() : null;
 
             List<EmployeeResponse> matches = employeeService.getAllEmployees()
                     .stream()
                     .filter(employee ->
-                            employee.getFirstName().toLowerCase().contains(searchTerm)
-                                    || employee.getLastName().toLowerCase().contains(searchTerm))
+                            !hasName
+                                    || employee.getFirstName().toLowerCase().contains(nameTerm)
+                                    || employee.getLastName().toLowerCase().contains(nameTerm))
+                    .filter(employee ->
+                            !hasDepartment
+                                    || employee.getDepartment().equalsIgnoreCase(departmentTerm))
                     .toList();
 
             return objectMapper.writeValueAsString(

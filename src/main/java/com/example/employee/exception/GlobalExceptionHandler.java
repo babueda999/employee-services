@@ -2,6 +2,8 @@ package com.example.employee.exception;
 
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -15,6 +17,8 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(EmployeeNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEmployeeNotFound(
@@ -125,6 +129,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception exception,
             HttpServletRequest request) {
+
+        log.error(
+                "Unhandled exception on {} {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception
+        );
 
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
