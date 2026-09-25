@@ -39,6 +39,22 @@ describe("lib/agent", () => {
       );
     });
 
+    it("includes the role in the request body when provided", async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({ reply: "Here are all employees." }),
+      );
+
+      await askAgent("List all employees", "ADMIN");
+
+      expect(fetch).toHaveBeenCalledWith(
+        "http://localhost:8080/api/agent",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ message: "List all employees", role: "ADMIN" }),
+        }),
+      );
+    });
+
     it("throws ApiError with the backend message when the request fails", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse(sampleErrorBody, 500));
 

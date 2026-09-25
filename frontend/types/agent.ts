@@ -1,5 +1,8 @@
+export type AgentRole = "USER" | "MANAGER" | "ADMIN";
+
 export interface AgentRequest {
   message: string;
+  role?: AgentRole;
 }
 
 export interface AgentResponse {

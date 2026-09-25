@@ -47,22 +47,44 @@ Validation rules:
 
 Not a CRUD resource, so it doesn't follow the `/api/<resource-plural>` pattern — it's a single
 natural-language action endpoint backed by `EmployeeAgent`, which answers using the `get_employee`,
-`list_employees`, and `search_employees` tools (see [[architecture]]).
+`list_employees`, `search_employees`, `update_employee`, `delete_employee`, and `adjust_salary`
+tools (see [[architecture]]). The same operations are also exposed as MCP tools via
+`EmployeeMcpTools`.
+
+**Role permissions:**
+- `USER`: read only (`get_employee`, `list_employees`, `search_employees`)
+- `MANAGER`: update only (`update_employee`, `adjust_salary`) — no read, no delete
+- `ADMIN`: read, update (`update_employee`), and delete (`delete_employee`) — everything except
+  `adjust_salary`, which stays MANAGER-exclusive
+
+So a `MANAGER` still cannot read or delete employees through the agent (each gets `403` outside
+its own lane), and salary adjustments specifically are the one action `ADMIN` doesn't get. Omitting
+`role` defaults to `USER` (read only).
 
 | Method | Path         | Description                                | Success | Error cases |
 |--------|--------------|---------------------------------------------|---------|-------------|
-| POST   | `/api/agent` | Ask the employee AI agent a question        | 200 OK  | 400 (validation), 500 (OpenAI/unexpected failure) |
+| POST   | `/api/agent` | Ask the employee AI agent a question        | 200 OK  | 400 (validation), 403 (authorization), 500 (OpenAI/unexpected failure) |
 
 ### Request body — `AgentRequest`
 
 ```json
 {
-  "message": "Find employee 101"
+  "message": "Find employee 101",
+  "role": "ADMIN"
 }
 ```
 
 Validation rules:
 - `message`: required, not blank
+- `role`: optional; one of `USER`, `MANAGER`, `ADMIN` (case-sensitive). Defaults to `USER` when omitted.
+  Checked twice: `AuthorizationGuardrail.validateRecognizedRole` up front (any of the three
+  recognized roles passes this — it only rejects a null/blank/unrecognized role, before the agent
+  makes any OpenAI call), then again per tool the model decides to call, with the actual
+  per-operation permission — `checkReadAccess` (`USER`/`ADMIN`) for
+  `get_employee`/`list_employees`/`search_employees`, `checkUpdateAccess` (`MANAGER`/`ADMIN`) for
+  `update_employee`, `checkSalaryAdjustmentAccess` (`MANAGER` only) for `adjust_salary`, and
+  `checkDeleteAccess` (`ADMIN` only) for `delete_employee`. This is a lightweight, unauthenticated
+  role signal (no login/session), not real authentication — see [[architecture]].
 
 ### Response body — `AgentResponse`
 
@@ -97,6 +119,8 @@ All errors (validation, not-found, duplicate, unexpected) are returned as `Error
 | `DuplicateEmployeeException`        | 409         | Duplicate Employee     |
 | `MethodArgumentNotValidException`   | 400         | Validation Failed (message lists `field: reason` per invalid field, comma-separated) |
 | `MissingServletRequestParameterException` | 400   | Validation Failed (e.g. `GET /api/employees/search` without `name`) |
+| `IllegalArgumentException`          | 400         | Bad Request (e.g. `/api/agent` guardrail rejection — empty message, over length, or a blocked instruction pattern; see [[architecture]]) |
+| `SecurityException`                 | 403         | Forbidden (e.g. `/api/agent` with an unrecognized `role`; see [[architecture]]) |
 | `HttpRequestMethodNotSupportedException` | 405    | Method Not Allowed (e.g. `GET /api/agent`, which only accepts `POST`) |
 | any other `Exception`               | 500         | Internal Server Error  |
 

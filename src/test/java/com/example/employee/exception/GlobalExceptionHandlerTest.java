@@ -88,6 +88,38 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handleIllegalArgument_returns400WithErrorResponse() {
+        IllegalArgumentException exception =
+                new IllegalArgumentException("The request contains a restricted instruction.");
+
+        ResponseEntity<ErrorResponse> response =
+                handler.handleIllegalArgument(exception, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getError()).isEqualTo("Bad Request");
+        assertThat(response.getBody().getMessage())
+                .isEqualTo("The request contains a restricted instruction.");
+    }
+
+    @Test
+    void handleSecurityException_returns403WithErrorResponse() {
+        SecurityException exception =
+                new SecurityException("User does not have permission to read employee information.");
+
+        ResponseEntity<ErrorResponse> response =
+                handler.handleSecurityException(exception, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(403);
+        assertThat(response.getBody().getError()).isEqualTo("Forbidden");
+        assertThat(response.getBody().getMessage())
+                .isEqualTo("User does not have permission to read employee information.");
+    }
+
+    @Test
     void handleMissingServletRequestParameter_returns400WithErrorResponse() {
         MissingServletRequestParameterException exception =
                 new MissingServletRequestParameterException("name", "String");
