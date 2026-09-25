@@ -34,7 +34,7 @@ describe("AgentChatBox", () => {
       "/api/agent",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ message: "List all employees" }),
+        body: JSON.stringify({ message: "List all employees", role: "USER" }),
       }),
     );
   });

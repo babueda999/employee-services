@@ -1,9 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ChatMessage } from "@/types/agent";
+import type { AgentRole, ChatMessage } from "@/types/agent";
 import MessageContent from "./MessageContent";
 import styles from "./agent.module.css";
+
+const ROLES: AgentRole[] = ["USER", "MANAGER", "ADMIN"];
+
+// Mirrors the backend's role model (AuthorizationGuardrail).
+const ROLE_LABELS: Record<AgentRole, string> = {
+  USER: "view",
+  MANAGER: "update (incl. salary changes)",
+  ADMIN: "view, update, delete",
+};
+
+const ROLE_DESCRIPTIONS: Record<AgentRole, string> = {
+  USER: "USER can only view. Other requests will be denied.",
+  MANAGER:
+    "MANAGER can only update, including salary changes. View and delete requests will be denied.",
+  ADMIN:
+    "ADMIN can view, update, and delete — except salary changes, which are MANAGER-only.",
+};
 
 function newId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -14,6 +31,7 @@ function newId(): string {
 export default function AgentChatBox() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [role, setRole] = useState<AgentRole>("USER");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const chatWindowRef = useRef<HTMLDivElement>(null);
@@ -48,7 +66,7 @@ export default function AgentChatBox() {
       const response = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ message: trimmed, role }),
       });
 
       const data = (await response.json()) as { reply?: string; message?: string };
@@ -117,6 +135,23 @@ export default function AgentChatBox() {
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
+
+      <label className={styles.roleLabel}>
+        Acting as:{" "}
+        <select
+          className={styles.roleSelect}
+          value={role}
+          onChange={(event) => setRole(event.target.value as AgentRole)}
+          disabled={pending}
+        >
+          {ROLES.map((roleOption) => (
+            <option key={roleOption} value={roleOption}>
+              {roleOption} — {ROLE_LABELS[roleOption]}
+            </option>
+          ))}
+        </select>
+        <span className={styles.rolePermission}>{ROLE_DESCRIPTIONS[role]}</span>
+      </label>
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <input

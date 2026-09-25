@@ -40,7 +40,7 @@ class AgentControllerTest {
 
     @Test
     void ask_returns200WithReply_whenValid() throws Exception {
-        when(employeeAgent.process("Find employee 101"))
+        when(employeeAgent.process("Find employee 101", null))
                 .thenReturn("Employee 101 is John Doe.");
 
         mockMvc.perform(post("/api/agent")
@@ -58,7 +58,7 @@ class AgentControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation Failed"));
 
-        verify(employeeAgent, never()).process(eq(""));
+        verify(employeeAgent, never()).process(eq(""), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -72,7 +72,7 @@ class AgentControllerTest {
 
     @Test
     void ask_returns500_whenAgentThrowsUnexpectedException() throws Exception {
-        when(employeeAgent.process("Find employee 101"))
+        when(employeeAgent.process("Find employee 101", null))
                 .thenThrow(new IllegalStateException("At least one credential source must be specified"));
 
         mockMvc.perform(post("/api/agent")

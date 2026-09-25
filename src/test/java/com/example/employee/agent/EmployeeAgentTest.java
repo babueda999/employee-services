@@ -1,5 +1,9 @@
 package com.example.employee.agent;
 
+import com.example.employee.guardrails.AuthorizationGuardrail;
+import com.example.employee.guardrails.InputGuardrail;
+import com.example.employee.guardrails.OutputGuardrail;
+import com.example.employee.guardrails.ToolGuardrail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,20 +29,33 @@ class EmployeeAgentTest {
 
     @BeforeEach
     void setUp() {
-        employeeAgent = new EmployeeAgent(employeeTools, new ObjectMapper());
+        employeeAgent = new EmployeeAgent(
+                employeeTools,
+                new ObjectMapper(),
+                new InputGuardrail(),
+                new OutputGuardrail(),
+                new ToolGuardrail(),
+                new AuthorizationGuardrail());
     }
 
     @Test
     void process_throwsIllegalArgumentException_whenMessageIsNull() {
         assertThatThrownBy(() -> employeeAgent.process(null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User message cannot be empty");
+                .hasMessage("Employee agent request cannot be empty.");
     }
 
     @Test
     void process_throwsIllegalArgumentException_whenMessageIsBlank() {
         assertThatThrownBy(() -> employeeAgent.process("   "))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User message cannot be empty");
+                .hasMessage("Employee agent request cannot be empty.");
+    }
+
+    @Test
+    void process_throwsSecurityException_whenRoleIsUnrecognized() {
+        assertThatThrownBy(() -> employeeAgent.process("List all employees", "GUEST"))
+                .isInstanceOf(SecurityException.class)
+                .hasMessage("Unrecognized role: GUEST");
     }
 }
