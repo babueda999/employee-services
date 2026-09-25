@@ -1,6 +1,8 @@
 package com.example.employee.agent;
 
+import com.example.employee.dto.EmployeeRequest;
 import com.example.employee.dto.EmployeeResponse;
+import com.example.employee.exception.DuplicateEmployeeException;
 import com.example.employee.exception.EmployeeNotFoundException;
 import com.example.employee.service.EmployeeService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -133,6 +135,199 @@ public class EmployeeTools {
                     {
                       "success": false,
                       "message": "Unable to search employees"
+                    }
+                    """;
+        }
+    }
+
+    /**
+     * Update an existing employee. This is a full replace, matching
+     * PUT /api/employees/{id} — every field must be supplied.
+     */
+    public String updateEmployee(
+            Long employeeId,
+            String firstName,
+            String lastName,
+            String email,
+            String department,
+            Double salary) {
+
+        try {
+
+            if (employeeId == null) {
+                return """
+                        {
+                          "success": false,
+                          "message": "Employee ID is required"
+                        }
+                        """;
+            }
+
+            EmployeeRequest request = new EmployeeRequest();
+            request.setFirstName(firstName);
+            request.setLastName(lastName);
+            request.setEmail(email);
+            request.setDepartment(department);
+            request.setSalary(salary);
+
+            EmployeeResponse updated =
+                    employeeService.updateEmployee(employeeId, request);
+
+            return objectMapper.writeValueAsString(updated);
+
+        } catch (EmployeeNotFoundException e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Employee not found"
+                    }
+                    """;
+
+        } catch (DuplicateEmployeeException e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Email already used by another employee"
+                    }
+                    """;
+
+        } catch (Exception e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Unable to update employee"
+                    }
+                    """;
+        }
+    }
+
+    /**
+     * Adjust an employee's salary by a relative amount, computed server-side
+     * against the employee's current salary — avoids relying on the model
+     * to know the current value or to do the arithmetic itself.
+     *
+     * @param amount       the change to apply; positive increases, negative
+     *                     decreases
+     * @param isPercentage when true, {@code amount} is a percentage of the
+     *                     current salary (e.g. 10 = +10%, -15 = -15%);
+     *                     when false, {@code amount} is a flat dollar amount
+     */
+    public String adjustSalary(
+            Long employeeId,
+            Double amount,
+            Boolean isPercentage) {
+
+        try {
+
+            if (employeeId == null) {
+                return """
+                        {
+                          "success": false,
+                          "message": "Employee ID is required"
+                        }
+                        """;
+            }
+
+            if (amount == null) {
+                return """
+                        {
+                          "success": false,
+                          "message": "Amount is required"
+                        }
+                        """;
+            }
+
+            EmployeeResponse current = employeeService.getEmployeeById(employeeId);
+
+            double currentSalary = current.getSalary();
+            double newSalary = Boolean.TRUE.equals(isPercentage)
+                    ? currentSalary * (1 + amount / 100.0)
+                    : currentSalary + amount;
+
+            if (newSalary <= 0) {
+                return """
+                        {
+                          "success": false,
+                          "message": "Resulting salary must be greater than zero"
+                        }
+                        """;
+            }
+
+            EmployeeRequest request = new EmployeeRequest();
+            request.setFirstName(current.getFirstName());
+            request.setLastName(current.getLastName());
+            request.setEmail(current.getEmail());
+            request.setDepartment(current.getDepartment());
+            request.setSalary(newSalary);
+
+            EmployeeResponse updated =
+                    employeeService.updateEmployee(employeeId, request);
+
+            return objectMapper.writeValueAsString(updated);
+
+        } catch (EmployeeNotFoundException e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Employee not found"
+                    }
+                    """;
+
+        } catch (Exception e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Unable to adjust employee salary"
+                    }
+                    """;
+        }
+    }
+
+    /**
+     * Delete an employee by ID.
+     */
+    public String deleteEmployee(Long employeeId) {
+
+        try {
+
+            if (employeeId == null) {
+                return """
+                        {
+                          "success": false,
+                          "message": "Employee ID is required"
+                        }
+                        """;
+            }
+
+            employeeService.deleteEmployee(employeeId);
+
+            return """
+                    {
+                      "success": true,
+                      "message": "Employee deleted"
+                    }
+                    """;
+
+        } catch (EmployeeNotFoundException e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Employee not found"
+                    }
+                    """;
+
+        } catch (Exception e) {
+
+            return """
+                    {
+                      "success": false,
+                      "message": "Unable to delete employee"
                     }
                     """;
         }

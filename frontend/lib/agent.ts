@@ -1,4 +1,4 @@
-import type { AgentRequest, AgentResponse } from "@/types/agent";
+import type { AgentRequest, AgentResponse, AgentRole } from "@/types/agent";
 import type { ApiErrorResponse } from "@/types/employee";
 
 const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:8080";
@@ -22,8 +22,8 @@ async function parseErrorBody(response: Response): Promise<ApiErrorResponse | nu
   }
 }
 
-export async function askAgent(message: string): Promise<string> {
-  const request: AgentRequest = { message };
+export async function askAgent(message: string, role?: AgentRole): Promise<string> {
+  const request: AgentRequest = { message, role };
 
   const response = await fetch(`${API_BASE_URL}/api/agent`, {
     method: "POST",

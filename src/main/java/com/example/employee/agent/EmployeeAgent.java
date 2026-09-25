@@ -1,8 +1,15 @@
 package com.example.employee.agent;
 
+import com.example.employee.agent.tools.AdjustSalaryTool;
+import com.example.employee.agent.tools.DeleteEmployeeTool;
 import com.example.employee.agent.tools.GetEmployeeTool;
 import com.example.employee.agent.tools.ListEmployeesTool;
 import com.example.employee.agent.tools.SearchEmployeeTool;
+import com.example.employee.agent.tools.UpdateEmployeeTool;
+import com.example.employee.guardrails.AuthorizationGuardrail;
+import com.example.employee.guardrails.InputGuardrail;
+import com.example.employee.guardrails.OutputGuardrail;
+import com.example.employee.guardrails.ToolGuardrail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -23,16 +30,30 @@ import java.util.Map;
 @Service
 public class EmployeeAgent {
 
+    private static final String DEFAULT_ROLE = "USER";
+
     private final EmployeeTools employeeTools;
     private final ObjectMapper objectMapper;
+    private final InputGuardrail inputGuardrail;
+    private final OutputGuardrail outputGuardrail;
+    private final ToolGuardrail toolGuardrail;
+    private final AuthorizationGuardrail authorizationGuardrail;
     private volatile OpenAIClient openAIClient;
 
     public EmployeeAgent(
             EmployeeTools employeeTools,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            InputGuardrail inputGuardrail,
+            OutputGuardrail outputGuardrail,
+            ToolGuardrail toolGuardrail,
+            AuthorizationGuardrail authorizationGuardrail) {
 
         this.employeeTools = employeeTools;
         this.objectMapper = objectMapper;
+        this.inputGuardrail = inputGuardrail;
+        this.outputGuardrail = outputGuardrail;
+        this.toolGuardrail = toolGuardrail;
+        this.authorizationGuardrail = authorizationGuardrail;
     }
 
     /**
@@ -63,19 +84,34 @@ public class EmployeeAgent {
      * The model can decide to call one of the employee tools.
      */
     public String process(String userMessage) {
+        return process(userMessage, DEFAULT_ROLE);
+    }
 
-        if (userMessage == null || userMessage.isBlank()) {
-            throw new IllegalArgumentException(
-                    "User message cannot be empty"
-            );
-        }
+    /**
+     * @param role caller's role (USER, MANAGER, or ADMIN); defaults to USER
+     *             when null or blank. USER can only view, MANAGER can only
+     *             update (including salary adjustments), and ADMIN can
+     *             view, update, and delete — except salary adjustment,
+     *             which stays MANAGER-exclusive. An unrecognized role fails
+     *             fast up front, before any OpenAI call is made; the actual
+     *             per-operation permission is then checked per tool — see
+     *             {@link #authorizeForTool(String, String)}.
+     */
+    public String process(String userMessage, String role) {
+
+        inputGuardrail.validate(userMessage);
+
+        String effectiveRole = role == null || role.isBlank() ? DEFAULT_ROLE : role;
+
+        authorizationGuardrail.validateRecognizedRole(effectiveRole);
 
         String instructions = """
                 You are an Employee Management AI Agent.
 
                 Your job is to help users with employee information.
 
-                You have access to employee management tools.
+                You have access to employee management tools, including tools
+                that update and delete employee records.
 
                 IMPORTANT RULES:
                 1. Never invent employee information.
@@ -83,6 +119,15 @@ public class EmployeeAgent {
                 3. If an employee cannot be found, clearly say that the employee was not found.
                 4. Give concise and useful answers.
                 5. Do not expose internal implementation details.
+                6. Only call update_employee or delete_employee when the user has
+                   clearly and explicitly asked for that change. Never delete or
+                   modify an employee as a side effect of an unrelated request.
+                7. update_employee replaces the entire record — if you don't already
+                   know the employee's current field values, call get_employee first.
+                8. For a raise, pay cut, or percentage salary change, use
+                   adjust_salary instead of update_employee — it computes the new
+                   salary from the current value on the server, so you never need
+                   to know or calculate the current salary yourself.
                 """;
 
         ResponseCreateParams.Builder paramsBuilder =
@@ -92,7 +137,10 @@ public class EmployeeAgent {
                         .input(userMessage)
                         .addTool(getEmployeeTool())
                         .addTool(listEmployeesTool())
-                        .addTool(searchEmployeesTool());
+                        .addTool(searchEmployeesTool())
+                        .addTool(updateEmployeeTool())
+                        .addTool(deleteEmployeeTool())
+                        .addTool(adjustSalaryTool());
 
         Response response =
                 openAIClient().responses().create(
@@ -120,7 +168,8 @@ public class EmployeeAgent {
             String toolResult =
                     executeTool(
                             functionCall.name(),
-                            functionCall.arguments()
+                            functionCall.arguments(),
+                            effectiveRole
                     );
 
             /*
@@ -146,7 +195,7 @@ public class EmployeeAgent {
          * normal AI response.
          */
         if (toolResults.isEmpty()) {
-            return extractText(response);
+            return sanitizeOutput(extractText(response));
         }
 
         /*
@@ -168,6 +217,9 @@ public class EmployeeAgent {
                         .addTool(getEmployeeTool())
                         .addTool(listEmployeesTool())
                         .addTool(searchEmployeesTool())
+                        .addTool(updateEmployeeTool())
+                        .addTool(deleteEmployeeTool())
+                        .addTool(adjustSalaryTool())
                         .build();
 
         Response finalResponse =
@@ -175,15 +227,44 @@ public class EmployeeAgent {
                         finalParams
                 );
 
-        return extractText(finalResponse);
+        return sanitizeOutput(extractText(finalResponse));
     }
 
     /**
-     * Execute an AI-requested tool.
+     * Runs the agent's final reply through the output guardrail. A violation
+     * (sensitive content, an empty/oversized response) fails safe with a
+     * generic refusal rather than surfacing the raw response or a 500.
+     */
+    private String sanitizeOutput(String text) {
+
+        try {
+            return outputGuardrail.validate(text);
+        } catch (RuntimeException ex) {
+            return "I can't share that response. Please rephrase your question.";
+        }
+    }
+
+    /**
+     * Execute an AI-requested tool. Authorization is checked per tool, since
+     * reads, updates, and deletes require different privilege levels — see
+     * {@link #authorizeForTool(String, String)}.
      */
     private String executeTool(
             String functionName,
-            String arguments) {
+            String arguments,
+            String role) {
+
+        try {
+            toolGuardrail.validateTool(functionName);
+        } catch (SecurityException ex) {
+            return """
+                    {
+                      "error": "Unknown tool"
+                    }
+                    """;
+        }
+
+        authorizeForTool(functionName, role);
 
         return switch (functionName) {
 
@@ -196,12 +277,43 @@ public class EmployeeAgent {
             case SearchEmployeeTool.NAME ->
                     SearchEmployeeTool.execute(arguments, employeeTools, objectMapper);
 
+            case UpdateEmployeeTool.NAME ->
+                    UpdateEmployeeTool.execute(arguments, employeeTools, objectMapper);
+
+            case DeleteEmployeeTool.NAME ->
+                    DeleteEmployeeTool.execute(arguments, employeeTools, objectMapper);
+
+            case AdjustSalaryTool.NAME ->
+                    AdjustSalaryTool.execute(arguments, employeeTools, objectMapper);
+
             default -> """
                     {
                       "error": "Unknown tool"
                     }
                     """;
         };
+    }
+
+    /**
+     * Maps a tool to the AuthorizationGuardrail check matching its risk:
+     * reads need USER/ADMIN, field updates need MANAGER/ADMIN, deletes need
+     * ADMIN, and salary adjustments need MANAGER specifically (ADMIN is
+     * deliberately excluded there — see
+     * AuthorizationGuardrail.checkSalaryAdjustmentAccess). Throws
+     * SecurityException (-> 403) when the role is insufficient.
+     */
+    private void authorizeForTool(String functionName, String role) {
+
+        switch (functionName) {
+
+            case UpdateEmployeeTool.NAME -> authorizationGuardrail.checkUpdateAccess(role);
+
+            case AdjustSalaryTool.NAME -> authorizationGuardrail.checkSalaryAdjustmentAccess(role);
+
+            case DeleteEmployeeTool.NAME -> authorizationGuardrail.checkDeleteAccess(role);
+
+            default -> authorizationGuardrail.checkReadAccess(role);
+        }
     }
 
     /**
@@ -329,6 +441,154 @@ public class EmployeeAgent {
         return FunctionTool.builder()
                 .name(SearchEmployeeTool.NAME)
                 .description(SearchEmployeeTool.DESCRIPTION)
+                .parameters(parameters)
+                .strict(true)
+                .build();
+    }
+
+    /**
+     * Tool definition exposed to OpenAI.
+     *
+     * The AI sees this as:
+     *
+     * update_employee(employeeId, firstName, lastName, email, department, salary)
+     *
+     * This is a full replace (matches PUT /api/employees/{id}), so every
+     * field is required — none are nullable.
+     */
+    private FunctionTool updateEmployeeTool() {
+
+        FunctionTool.Parameters parameters =
+                FunctionTool.Parameters.builder()
+                        .putAdditionalProperty("type", JsonValue.from("object"))
+                        .putAdditionalProperty(
+                                "properties",
+                                JsonValue.from(Map.of(
+                                        "employeeId", Map.of(
+                                                "type", "integer",
+                                                "description", "The numeric ID of the employee to update"
+                                        ),
+                                        "firstName", Map.of(
+                                                "type", "string",
+                                                "description", "The employee's first name"
+                                        ),
+                                        "lastName", Map.of(
+                                                "type", "string",
+                                                "description", "The employee's last name"
+                                        ),
+                                        "email", Map.of(
+                                                "type", "string",
+                                                "description", "The employee's email address"
+                                        ),
+                                        "department", Map.of(
+                                                "type", "string",
+                                                "description", "The employee's department (e.g. Engineering, Sales)"
+                                        ),
+                                        "salary", Map.of(
+                                                "type", "number",
+                                                "description", "The employee's salary"
+                                        )
+                                ))
+                        )
+                        .putAdditionalProperty(
+                                "required",
+                                JsonValue.from(List.of(
+                                        "employeeId", "firstName", "lastName",
+                                        "email", "department", "salary"
+                                ))
+                        )
+                        .putAdditionalProperty("additionalProperties", JsonValue.from(false))
+                        .build();
+
+        return FunctionTool.builder()
+                .name(UpdateEmployeeTool.NAME)
+                .description(UpdateEmployeeTool.DESCRIPTION)
+                .parameters(parameters)
+                .strict(true)
+                .build();
+    }
+
+    /**
+     * Tool definition exposed to OpenAI.
+     *
+     * The AI sees this as:
+     *
+     * delete_employee(employeeId)
+     */
+    private FunctionTool deleteEmployeeTool() {
+
+        FunctionTool.Parameters parameters =
+                FunctionTool.Parameters.builder()
+                        .putAdditionalProperty("type", JsonValue.from("object"))
+                        .putAdditionalProperty(
+                                "properties",
+                                JsonValue.from(Map.of(
+                                        "employeeId", Map.of(
+                                                "type", "integer",
+                                                "description", "The numeric ID of the employee to delete"
+                                        )
+                                ))
+                        )
+                        .putAdditionalProperty(
+                                "required",
+                                JsonValue.from(List.of("employeeId"))
+                        )
+                        .putAdditionalProperty("additionalProperties", JsonValue.from(false))
+                        .build();
+
+        return FunctionTool.builder()
+                .name(DeleteEmployeeTool.NAME)
+                .description(DeleteEmployeeTool.DESCRIPTION)
+                .parameters(parameters)
+                .strict(true)
+                .build();
+    }
+
+    /**
+     * Tool definition exposed to OpenAI.
+     *
+     * The AI sees this as:
+     *
+     * adjust_salary(employeeId, amount, isPercentage)
+     *
+     * isPercentage is listed as "required" with a nullable type — the model
+     * must always pass the key, but null is treated as a flat dollar amount.
+     */
+    private FunctionTool adjustSalaryTool() {
+
+        FunctionTool.Parameters parameters =
+                FunctionTool.Parameters.builder()
+                        .putAdditionalProperty("type", JsonValue.from("object"))
+                        .putAdditionalProperty(
+                                "properties",
+                                JsonValue.from(Map.of(
+                                        "employeeId", Map.of(
+                                                "type", "integer",
+                                                "description", "The numeric ID of the employee whose salary is being adjusted"
+                                        ),
+                                        "amount", Map.of(
+                                                "type", "number",
+                                                "description", "The change to apply. Positive increases the salary, "
+                                                        + "negative decreases it. A flat dollar amount unless "
+                                                        + "isPercentage is true."
+                                        ),
+                                        "isPercentage", Map.of(
+                                                "type", List.of("boolean", "null"),
+                                                "description", "true if amount is a percentage of the current salary "
+                                                        + "(e.g. 10 for +10%); false or null for a flat dollar amount"
+                                        )
+                                ))
+                        )
+                        .putAdditionalProperty(
+                                "required",
+                                JsonValue.from(List.of("employeeId", "amount", "isPercentage"))
+                        )
+                        .putAdditionalProperty("additionalProperties", JsonValue.from(false))
+                        .build();
+
+        return FunctionTool.builder()
+                .name(AdjustSalaryTool.NAME)
+                .description(AdjustSalaryTool.DESCRIPTION)
                 .parameters(parameters)
                 .strict(true)
                 .build();

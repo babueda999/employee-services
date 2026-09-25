@@ -28,7 +28,7 @@ public class AgentController {
     public ResponseEntity<AgentResponse> ask(
             @Valid @RequestBody AgentRequest request) {
 
-        String reply = employeeAgent.process(request.getMessage());
+        String reply = employeeAgent.process(request.getMessage(), request.getRole());
 
         return ResponseEntity.ok(
                 new AgentResponse(reply)
