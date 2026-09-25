@@ -95,10 +95,10 @@ class EmployeeToolsTest {
     // --- searchEmployees ---
 
     @Test
-    void searchEmployees_returnsFailureJson_whenNameBlank() {
-        String result = employeeTools.searchEmployees(" ");
+    void searchEmployees_returnsFailureJson_whenNameAndDepartmentBlank() {
+        String result = employeeTools.searchEmployees(" ", " ");
 
-        assertThat(result).contains("\"success\": false", "Search name is required");
+        assertThat(result).contains("\"success\": false", "Search name or department is required");
     }
 
     @Test
@@ -109,7 +109,7 @@ class EmployeeToolsTest {
         when(employeeService.getAllEmployees())
                 .thenReturn(List.of(john, jane));
 
-        String result = employeeTools.searchEmployees("doe");
+        String result = employeeTools.searchEmployees("doe", null);
 
         assertThat(result).contains("\"id\":1").doesNotContain("\"id\":2");
     }
@@ -119,7 +119,53 @@ class EmployeeToolsTest {
         when(employeeService.getAllEmployees())
                 .thenReturn(List.of(sampleResponse(1L)));
 
-        String result = employeeTools.searchEmployees("nonexistent");
+        String result = employeeTools.searchEmployees("nonexistent", null);
+
+        assertThat(result).isEqualTo("[]");
+    }
+
+    @Test
+    void searchEmployees_returnsOnlyMatchingEmployees_whenDepartmentProvided() {
+        EmployeeResponse john = sampleResponse(1L);
+        EmployeeResponse jane = new EmployeeResponse(
+                2L, "Jane", "Smith", "jane.smith@example.com", "Sales", 65000.0);
+        when(employeeService.getAllEmployees())
+                .thenReturn(List.of(john, jane));
+
+        String result = employeeTools.searchEmployees(null, "Engineering");
+
+        assertThat(result).contains("\"id\":1").doesNotContain("\"id\":2");
+    }
+
+    @Test
+    void searchEmployees_returnsMatchingDepartment_caseInsensitive() {
+        when(employeeService.getAllEmployees())
+                .thenReturn(List.of(sampleResponse(1L)));
+
+        String result = employeeTools.searchEmployees(null, "engineering");
+
+        assertThat(result).contains("\"id\":1");
+    }
+
+    @Test
+    void searchEmployees_appliesBothFilters_whenNameAndDepartmentProvided() {
+        EmployeeResponse john = sampleResponse(1L);
+        EmployeeResponse johnSales = new EmployeeResponse(
+                2L, "John", "Appleseed", "john.appleseed@example.com", "Sales", 65000.0);
+        when(employeeService.getAllEmployees())
+                .thenReturn(List.of(john, johnSales));
+
+        String result = employeeTools.searchEmployees("john", "Engineering");
+
+        assertThat(result).contains("\"id\":1").doesNotContain("\"id\":2");
+    }
+
+    @Test
+    void searchEmployees_returnsEmptyList_whenNoDepartmentMatches() {
+        when(employeeService.getAllEmployees())
+                .thenReturn(List.of(sampleResponse(1L)));
+
+        String result = employeeTools.searchEmployees(null, "Nonexistent");
 
         assertThat(result).isEqualTo("[]");
     }

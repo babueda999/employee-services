@@ -30,6 +30,7 @@ scratch.
 .\mvnw.cmd test                 # run tests
 .\mvnw.cmd spring-boot:run       # run the app (http://localhost:8080)
 .\mvnw.cmd clean package         # full build incl. jar packaging
+.\run.ps1                        # run the packaged jar (target/employee-*.jar)
 ```
 
 **Known issue**: `mvn package` (jar assembly) can fail in this environment with a PKIX/SSL trust-chain error
@@ -37,6 +38,13 @@ when Maven downloads `maven-jar-plugin` transitive dependencies from Maven Centr
 not a code problem. `compile` and `test` are unaffected; use `spring-boot:run` to run/verify the app if
 packaging fails. Do not "fix" this by disabling SSL certificate verification without the user's explicit
 sign-off.
+
+**Outbound HTTPS (OpenAI agent calls)**: the same class of local trust-store issue can break outbound HTTPS
+calls the app makes itself (e.g. the employee agent calling OpenAI), failing with a PKIX `SSLHandshakeException`.
+The fix is `.certs/cacerts`, a prepared JVM trust store — not disabling verification. It's wired in two places:
+`spring-boot:run` picks it up automatically via the `jvmArguments` set on `spring-boot-maven-plugin` in `pom.xml`;
+running the packaged jar directly should go through `.\run.ps1`, which passes
+`-Djavax.net.ssl.trustStore=.certs\cacerts` to the `java -jar` invocation.
 
 ### Frontend (`frontend/`)
 
