@@ -295,7 +295,11 @@ public class EmployeeAgent {
      *
      * The AI sees this as:
      *
-     * search_employees(name)
+     * search_employees(name, department)
+     *
+     * Both parameters are listed as "required" with a nullable type, which
+     * is how OpenAI's strict function-calling schema expresses an optional
+     * argument — the model must always pass the key, but may pass null.
      */
     private FunctionTool searchEmployeesTool() {
 
@@ -306,14 +310,18 @@ public class EmployeeAgent {
                                 "properties",
                                 JsonValue.from(Map.of(
                                         "name", Map.of(
-                                                "type", "string",
-                                                "description", "Employee name or partial name to search for"
+                                                "type", List.of("string", "null"),
+                                                "description", "Employee name or partial name to search for, or null if not filtering by name"
+                                        ),
+                                        "department", Map.of(
+                                                "type", List.of("string", "null"),
+                                                "description", "Department to filter by (e.g. Engineering, Sales), or null if not filtering by department"
                                         )
                                 ))
                         )
                         .putAdditionalProperty(
                                 "required",
-                                JsonValue.from(List.of("name"))
+                                JsonValue.from(List.of("name", "department"))
                         )
                         .putAdditionalProperty("additionalProperties", JsonValue.from(false))
                         .build();

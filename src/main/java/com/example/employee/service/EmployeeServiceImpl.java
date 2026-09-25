@@ -8,6 +8,8 @@ import com.example.employee.exception.DuplicateEmployeeException;
 import com.example.employee.exception.EmployeeNotFoundException;
 import com.example.employee.mapper.EmployeeMapper;
 import com.example.employee.repository.EmployeeRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,8 @@ import java.util.List;
 @Transactional
 public class EmployeeServiceImpl
         implements EmployeeService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmployeeServiceImpl.class);
 
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
@@ -78,8 +82,14 @@ public class EmployeeServiceImpl
     @Transactional(readOnly = true)
     public List<EmployeeResponse> getAllEmployees() {
 
-        return employeeRepository.findAll()
-                .stream()
+        List<Employee> employees = employeeRepository.findAll();
+
+        if (employees.isEmpty()) {
+
+            log.info("No employee records are available");
+        }
+
+        return employees.stream()
                 .map(employeeMapper::toResponse)
                 .toList();
     }
@@ -147,11 +157,17 @@ public class EmployeeServiceImpl
     @Transactional(readOnly = true)
     public List<EmployeeResponse> searchEmployeesByName(String name) {
 
-        return employeeRepository
+        List<Employee> employees = employeeRepository
                 .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
                         name,
-                        name)
-                .stream()
+                        name);
+
+        if (employees.isEmpty()) {
+
+            log.info("No employee records are available for search term: {}", name);
+        }
+
+        return employees.stream()
                 .map(employeeMapper::toResponse)
                 .toList();
     }

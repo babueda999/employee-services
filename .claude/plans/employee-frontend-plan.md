@@ -1,7 +1,7 @@
 # Plan: Employee Frontend
 
-STATUS: in progress — Phases 1-2 (scaffold + read path) done, Phases 3-6 (write path, delete, tests, docs
-polish) remaining
+STATUS: in progress — Phases 1-4 (scaffold, read path, write path, delete) and the agent chat box (see below)
+done; Phases 5-6 (full test coverage, docs polish) remaining
 
 ## Goal
 
@@ -59,6 +59,21 @@ first — that's a separate backend change, not part of this plan, and should ge
 - Where does the frontend get deployed/run relative to the backend (same host, reverse proxy, separate
   deployment)? Determines whether `API_BASE_URL` needs to be configurable per environment.
 - Should delete require a confirmation modal, or is a simple `confirm()` acceptable for a first version?
+
+## Addendum: Employee Agent chat box (added, out of original scope)
+
+DONE — `/agent` page with a client-side chat UI (`app/agent/AgentChatBox.tsx`) that talks to the backend's
+`POST /api/agent` (OpenAI-backed natural-language endpoint, see [[api]]). Same server-side-proxy pattern as
+the rest of the app: the client component calls the same-origin Route Handler `app/api/agent/route.ts`, which
+forwards to `lib/agent.ts` (`askAgent`) on the server, avoiding any need for backend CORS changes. Linked from
+the home page ("Chat with the agent"). Types in `types/agent.ts`. Tests: `tests/lib/agent.test.ts` (success +
+`ApiError` path) and `tests/app/agent/AgentChatBox.test.tsx` (success reply, error display, empty-input
+no-op), following the existing `tests/lib/employees.test.ts` / component-test conventions.
+
+Known dependency: replies require the backend's OpenAI credential *and* outbound HTTPS to succeed — see the
+SSL/PKIX trust-store issue noted in [.claude/CLAUDE.md](../CLAUDE.md) (Norton AV SSL inspection root not in
+the JDK's `cacerts`). The chat box itself works correctly end-to-end regardless — it faithfully surfaces
+whatever the backend returns, including that error, rather than failing silently.
 
 ## Definition of done
 
