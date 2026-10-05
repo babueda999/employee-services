@@ -8,6 +8,7 @@ public class EmployeeResponse {
     private String email;
     private String department;
     private Double salary;
+    private Boolean remoteWorkEligible;
 
     public EmployeeResponse() {
     }
@@ -18,7 +19,8 @@ public class EmployeeResponse {
             String lastName,
             String email,
             String department,
-            Double salary) {
+            Double salary,
+            Boolean remoteWorkEligible) {
 
         this.id = id;
         this.firstName = firstName;
@@ -26,6 +28,7 @@ public class EmployeeResponse {
         this.email = email;
         this.department = department;
         this.salary = salary;
+        this.remoteWorkEligible = remoteWorkEligible;
     }
 
     public Long getId() {
@@ -50,5 +53,9 @@ public class EmployeeResponse {
 
     public Double getSalary() {
         return salary;
+    }
+
+    public Boolean getRemoteWorkEligible() {
+        return remoteWorkEligible;
     }
 }

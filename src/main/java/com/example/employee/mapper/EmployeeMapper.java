@@ -19,6 +19,7 @@ public class EmployeeMapper {
         employee.setEmail(request.getEmail());
         employee.setDepartment(request.getDepartment());
         employee.setSalary(request.getSalary());
+        employee.setRemoteWorkEligible(request.getRemoteWorkEligible());
 
         return employee;
     }
@@ -31,7 +32,8 @@ public class EmployeeMapper {
                 employee.getLastName(),
                 employee.getEmail(),
                 employee.getDepartment(),
-                employee.getSalary()
+                employee.getSalary(),
+                employee.getRemoteWorkEligible()
         );
     }
 
@@ -44,5 +46,6 @@ public class EmployeeMapper {
         employee.setEmail(request.getEmail());
         employee.setDepartment(request.getDepartment());
         employee.setSalary(request.getSalary());
+        employee.setRemoteWorkEligible(request.getRemoteWorkEligible());
     }
 }

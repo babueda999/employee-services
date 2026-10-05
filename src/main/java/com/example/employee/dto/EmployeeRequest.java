@@ -24,6 +24,8 @@ public class EmployeeRequest {
     @Positive(message = "Salary must be greater than zero")
     private Double salary;
 
+    private Boolean remoteWorkEligible;
+
     public String getFirstName() {
         return firstName;
     }
@@ -62,5 +64,13 @@ public class EmployeeRequest {
 
     public void setSalary(Double salary) {
         this.salary = salary;
+    }
+
+    public Boolean getRemoteWorkEligible() {
+        return remoteWorkEligible;
+    }
+
+    public void setRemoteWorkEligible(Boolean remoteWorkEligible) {
+        this.remoteWorkEligible = remoteWorkEligible;
     }
 }

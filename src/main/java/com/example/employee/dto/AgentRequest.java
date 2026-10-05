@@ -13,6 +13,13 @@ public class AgentRequest {
      */
     private String role;
 
+    /**
+     * Identifies a conversation so prior turns are replayed as context.
+     * Optional; omit it to start a new conversation — the response's
+     * {@code conversationId} is then the one to send back on the next turn.
+     */
+    private String conversationId;
+
     public String getMessage() {
         return message;
     }
@@ -27,5 +34,13 @@ public class AgentRequest {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(String conversationId) {
+        this.conversationId = conversationId;
     }
 }

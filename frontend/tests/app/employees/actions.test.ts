@@ -75,9 +75,25 @@ describe("employees/actions", () => {
         email: "john.doe@example.com",
         department: "Engineering",
         salary: 75000,
+        remoteWorkEligible: false,
       });
       expect(revalidatePathMock).toHaveBeenCalledWith("/employees");
       expect(redirectMock).toHaveBeenCalledWith("/employees/42");
+    });
+
+    it("maps a checked remote-work checkbox to true", async () => {
+      createEmployeeMock.mockResolvedValue({ id: 42 });
+
+      await expect(
+        createEmployeeAction(
+          { error: null },
+          formDataFor({ ...validFields, remoteWorkEligible: "on" }),
+        ),
+      ).rejects.toThrow("NEXT_REDIRECT:/employees/42");
+
+      expect(createEmployeeMock).toHaveBeenCalledWith(
+        expect.objectContaining({ remoteWorkEligible: true }),
+      );
     });
 
     it("returns the ApiError message instead of redirecting on failure", async () => {

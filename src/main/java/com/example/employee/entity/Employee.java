@@ -33,6 +33,9 @@ public class Employee {
     @Column(nullable = false)
     private Double salary;
 
+    @Column
+    private Boolean remoteWorkEligible;
+
     public Employee() {
     }
 
@@ -41,13 +44,15 @@ public class Employee {
             String lastName,
             String email,
             String department,
-            Double salary) {
+            Double salary,
+            Boolean remoteWorkEligible) {
 
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.department = department;
         this.salary = salary;
+        this.remoteWorkEligible = remoteWorkEligible;
     }
 
     public Long getId() {
@@ -96,5 +101,13 @@ public class Employee {
 
     public void setSalary(Double salary) {
         this.salary = salary;
+    }
+
+    public Boolean getRemoteWorkEligible() {
+        return remoteWorkEligible;
+    }
+
+    public void setRemoteWorkEligible(Boolean remoteWorkEligible) {
+        this.remoteWorkEligible = remoteWorkEligible;
     }
 }

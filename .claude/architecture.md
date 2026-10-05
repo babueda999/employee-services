@@ -55,12 +55,37 @@
 `EmployeeRequest` (input DTO) additionally enforces via Bean Validation: `@NotBlank` on name/email/department,
 `@Email` format on email, `@NotNull @Positive` on salary.
 
+`ConversationMessage` (table `conversation_messages`) — one row per agent turn, used to replay
+conversation history (see `.claude/structure.md#employee-ai-agent`):
+
+| Field          | Type    | Constraints  |
+|----------------|---------|--------------|
+| id             | Long    | PK, identity |
+| conversationId | String  | not null     |
+| role           | String  | not null (`"user"` or `"assistant"`) |
+| content        | String  | not null, length 8000 |
+| createdAt      | Instant | not null     |
+
+`PendingToolConfirmation` (table `pending_tool_confirmations`) — a held CRITICAL-risk tool call
+awaiting human approval; `id` doubles as the single-use confirmation token:
+
+| Field          | Type    | Constraints  |
+|----------------|---------|--------------|
+| id             | String  | PK (the confirmation token, a UUID) |
+| conversationId | String  | not null     |
+| toolName       | String  | not null     |
+| argumentsJson  | String  | not null, length 2000 |
+| role           | String  | not null (role to re-authorize with on approval) |
+| createdAt      | Instant | not null (5-minute TTL enforced in `ToolConfirmationServiceImpl`) |
+
 ## Known gaps / not yet implemented
 
 - No pagination/sorting on `GET /api/employees` — returns the full list.
 - No authentication/authorization layer.
 - No persistent database — H2 is in-memory, data is lost on restart (`ddl-auto=update` will recreate/update
-  schema each run against a fresh in-memory DB).
+  schema each run against a fresh in-memory DB). This now also applies to agent conversation history
+  (`conversation_messages`) and pending delete confirmations (`pending_tool_confirmations`) — a restart
+  silently ends every in-flight conversation and drops any confirmation awaiting approval.
 - No API documentation generation (no springdoc/OpenAPI dependency).
 - Full `mvn package` (jar assembly) may fail in this environment due to a local TLS trust-chain issue when
   Maven downloads `maven-jar-plugin` transitive dependencies from Maven Central — use `mvn spring-boot:run` to

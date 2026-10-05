@@ -21,6 +21,7 @@ function parseFormData(formData: FormData): CreateEmployeeRequest {
     email: String(formData.get("email") ?? ""),
     department: String(formData.get("department") ?? ""),
     salary: Number(formData.get("salary")),
+    remoteWorkEligible: formData.get("remoteWorkEligible") === "on",
   };
 }
 

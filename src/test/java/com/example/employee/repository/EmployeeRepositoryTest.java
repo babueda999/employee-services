@@ -18,7 +18,7 @@ class EmployeeRepositoryTest {
     private EmployeeRepository employeeRepository;
 
     private Employee sampleEmployee(String email) {
-        return new Employee("John", "Doe", email, "Engineering", 75000.0);
+        return new Employee("John", "Doe", email, "Engineering", 75000.0, true);
     }
 
     @Test
@@ -67,8 +67,8 @@ class EmployeeRepositoryTest {
 
     @Test
     void findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase_matchesFirstName_caseInsensitive() {
-        employeeRepository.save(new Employee("Alice", "Smith", "alice@example.com", "Engineering", 75000.0));
-        employeeRepository.save(new Employee("Bob", "Jones", "bob@example.com", "Sales", 60000.0));
+        employeeRepository.save(new Employee("Alice", "Smith", "alice@example.com", "Engineering", 75000.0, true));
+        employeeRepository.save(new Employee("Bob", "Jones", "bob@example.com", "Sales", 60000.0, false));
 
         var results = employeeRepository
                 .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("ALI", "ALI");
@@ -79,8 +79,8 @@ class EmployeeRepositoryTest {
 
     @Test
     void findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase_matchesLastName_caseInsensitive() {
-        employeeRepository.save(new Employee("Alice", "Smith", "alice@example.com", "Engineering", 75000.0));
-        employeeRepository.save(new Employee("Bob", "Jones", "bob@example.com", "Sales", 60000.0));
+        employeeRepository.save(new Employee("Alice", "Smith", "alice@example.com", "Engineering", 75000.0, true));
+        employeeRepository.save(new Employee("Bob", "Jones", "bob@example.com", "Sales", 60000.0, false));
 
         var results = employeeRepository
                 .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("jones", "jones");

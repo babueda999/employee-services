@@ -22,6 +22,7 @@ const sampleEmployee = {
   email: "john.doe@example.com",
   department: "Engineering",
   salary: 75000,
+  remoteWorkEligible: true,
 };
 
 const sampleErrorBody = {
@@ -102,6 +103,7 @@ describe("lib/employees", () => {
         email: "john.doe@example.com",
         department: "Engineering",
         salary: 75000,
+        remoteWorkEligible: true,
       });
 
       expect(result).toEqual(sampleEmployee);
@@ -131,6 +133,7 @@ describe("lib/employees", () => {
         email: "john.doe@example.com",
         department: "Engineering",
         salary: 75000,
+        remoteWorkEligible: true,
       }).catch((e) => e);
 
       expect(error).toBeInstanceOf(ApiError);
@@ -150,6 +153,7 @@ describe("lib/employees", () => {
         email: "john.doe@example.com",
         department: "Sales",
         salary: 75000,
+        remoteWorkEligible: true,
       });
 
       expect(result.department).toBe("Sales");

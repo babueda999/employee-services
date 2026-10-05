@@ -11,11 +11,17 @@ function isAgentRole(value: unknown): value is AgentRole {
 export async function POST(request: NextRequest) {
   let message: unknown;
   let role: unknown;
+  let conversationId: unknown;
 
   try {
-    const body = (await request.json()) as { message?: unknown; role?: unknown };
+    const body = (await request.json()) as {
+      message?: unknown;
+      role?: unknown;
+      conversationId?: unknown;
+    };
     message = body.message;
     role = body.role;
+    conversationId = body.conversationId;
   } catch {
     return NextResponse.json(
       { message: "Request body must be valid JSON." },
@@ -37,9 +43,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (conversationId !== undefined && typeof conversationId !== "string") {
+    return NextResponse.json(
+      { message: "conversationId must be a string." },
+      { status: 400 },
+    );
+  }
+
   try {
-    const reply = await askAgent(message, role);
-    return NextResponse.json({ reply });
+    const agentResponse = await askAgent(message, role, conversationId);
+    return NextResponse.json(agentResponse);
   } catch (error) {
     const status = error instanceof ApiError ? error.status : 502;
     const errorMessage =

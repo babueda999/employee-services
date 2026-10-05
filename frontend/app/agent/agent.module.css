@@ -1,36 +1,79 @@
 .main {
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --surface: #ffffff;
-  --surface-border: #e5e7eb;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --bubble-user: #4f46e5;
+  --bubble-user: var(--accent);
   --bubble-assistant: #f3f4f6;
 
   max-width: 720px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
-  font-family: var(--font-geist-sans, sans-serif);
+  font-family: var(--font-geist-sans), sans-serif;
 }
 
-.brand {
-  text-align: center;
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin: 0.5rem 0 2rem;
-  background: linear-gradient(135deg, #4f46e5, #818cf8);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
 }
 
-.backLink {
-  display: inline-block;
-  margin-bottom: 1rem;
+.subtitle {
+  margin: 0 0 1.5rem;
   color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.6rem;
+}
+
+.resetButton {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.resetButton:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.resetButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.suggestedPrompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+
+.promptChip {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.promptChip:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.promptChip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .chatWindow {
@@ -41,7 +84,7 @@
   max-height: 60vh;
   overflow-y: auto;
   border: 1px solid var(--surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
   padding: 1.25rem;
 }
@@ -129,14 +172,108 @@
   border-bottom-left-radius: 4px;
 }
 
+.agentBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.agentBadge {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.agentBadgeRead {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.agentBadgeWrite {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.agentBadgeDelete {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 .error {
-  color: #b91c1c;
+  color: var(--danger);
   margin-top: 0.75rem;
+}
+
+.confirmHint {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.confirmRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.approveButton,
+.denyButton {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.approveButton {
+  background: var(--danger);
+  color: #fff;
+}
+
+.approveButton:hover:not(:disabled) {
+  background: var(--danger-hover);
+}
+
+.denyButton {
+  background: transparent;
+  border-color: var(--surface-border);
+  color: var(--text-primary);
+}
+
+.denyButton:hover:not(:disabled) {
+  background: var(--surface-border);
+}
+
+.approveButton:disabled,
+.denyButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirmResolved {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.rolePanel {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
 }
 
 .roleLabel {
   display: block;
-  margin-top: 0.75rem;
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
@@ -154,7 +291,18 @@
   display: block;
   margin-top: 0.35rem;
   font-size: 0.8rem;
+}
+
+.rolePermissionUser {
   color: var(--text-secondary);
+}
+
+.rolePermissionManager {
+  color: var(--accent);
+}
+
+.rolePermissionAdmin {
+  color: var(--danger);
 }
 
 .form {
@@ -194,12 +342,6 @@
 
 @media (prefers-color-scheme: dark) {
   .main {
-    --surface: #16181d;
-    --surface-border: #2a2d34;
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --accent: #818cf8;
-    --accent-hover: #a5b4fc;
     --bubble-assistant: #23262d;
   }
 

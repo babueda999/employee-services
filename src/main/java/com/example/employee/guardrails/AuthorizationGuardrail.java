@@ -49,6 +49,16 @@ public class AuthorizationGuardrail {
     );
 
     /**
+     * Two-person control on delete: ADMIN can ask the agent to delete an
+     * employee (see {@link #checkDeleteAccess}), but approving or denying
+     * that pending confirmation is a separate action restricted to
+     * MANAGER — the same role never both requests and approves a deletion.
+     */
+    private static final Set<String> CONFIRMATION_APPROVAL_ROLES = Set.of(
+            "MANAGER"
+    );
+
+    /**
      * Fails fast on a null, blank, or unrecognized role before any
      * per-operation check or OpenAI call runs. Does not by itself grant
      * any permission — every recognized role still needs the matching
@@ -120,6 +130,22 @@ public class AuthorizationGuardrail {
         if (!DELETE_ROLES.contains(role.toUpperCase())) {
             throw new SecurityException(
                     "Only administrators can delete employees."
+            );
+        }
+    }
+
+    /**
+     * Gates approving/denying a pending human-in-the-loop confirmation (see
+     * {@code ToolConfirmationService}). Deliberately separate from
+     * {@link #checkDeleteAccess} — the requester's role is irrelevant here.
+     */
+    public void checkConfirmationApprovalAccess(String role) {
+
+        validateRole(role);
+
+        if (!CONFIRMATION_APPROVAL_ROLES.contains(role.toUpperCase())) {
+            throw new SecurityException(
+                    "Only managers can approve or deny a pending confirmation."
             );
         }
     }

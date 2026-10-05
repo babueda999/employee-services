@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackLink from "@/app/components/BackLink";
 import { ApiError, getEmployeeById } from "@/lib/employees";
 import DeleteEmployeeButton from "../DeleteEmployeeButton";
 import styles from "../employees.module.css";
@@ -23,34 +24,48 @@ export default async function EmployeeDetailPage(
 
   return (
     <main className={styles.main}>
-      <Link href="/employees" className={styles.backLink}>
-        &larr; Back to employees
-      </Link>
+      <BackLink href="/employees">Back to employees</BackLink>
 
-      <h1 className={styles.brand}>Sesha LLC</h1>
-      <h2>
-        {employee.firstName} {employee.lastName}
-      </h2>
-
-      <div className={styles.field}>
-        <span className={styles.label}>Email:</span>
-        {employee.email}
-      </div>
-      <div className={styles.field}>
-        <span className={styles.label}>Department:</span>
-        {employee.department}
-      </div>
-      <div className={styles.field}>
-        <span className={styles.label}>Salary:</span>
-        {employee.salary.toLocaleString()}
+      <div className={styles.pageHeader}>
+        <h2>
+          {employee.firstName} {employee.lastName}
+        </h2>
       </div>
 
-      <div className={styles.actions}>
-        <Link href={`/employees/${employee.id}/edit`}>Edit</Link>
-        <DeleteEmployeeButton
-          id={employee.id}
-          name={`${employee.firstName} ${employee.lastName}`}
-        />
+      <div className={styles.detailCard}>
+        <div className={styles.detailGrid}>
+          <span className={styles.detailLabel}>Email</span>
+          <span className={styles.detailValue}>{employee.email}</span>
+
+          <span className={styles.detailLabel}>Department</span>
+          <span className={styles.detailValue}>
+            <span className={styles.deptPill}>{employee.department}</span>
+          </span>
+
+          <span className={styles.detailLabel}>Salary</span>
+          <span className={`${styles.detailValue} ${styles.salaryCell}`}>
+            {employee.salary.toLocaleString()}
+          </span>
+
+          <span className={styles.detailLabel}>Remote work eligible</span>
+          <span className={styles.detailValue}>
+            {employee.remoteWorkEligible === null
+              ? "Not specified"
+              : employee.remoteWorkEligible
+                ? "Yes"
+                : "No"}
+          </span>
+        </div>
+
+        <div className={styles.actions}>
+          <Link href={`/employees/${employee.id}/edit`} className={styles.editLink}>
+            Edit
+          </Link>
+          <DeleteEmployeeButton
+            id={employee.id}
+            name={`${employee.firstName} ${employee.lastName}`}
+          />
+        </div>
       </div>
     </main>
   );
