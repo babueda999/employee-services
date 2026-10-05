@@ -45,3 +45,6 @@ npm-debug.log*
 ### Env / secrets ###
 .env
 .env.local
+
+### Claude Code ###
+.claude/settings.local.json
