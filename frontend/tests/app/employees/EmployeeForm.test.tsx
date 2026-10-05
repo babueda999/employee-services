@@ -27,6 +27,7 @@ describe("EmployeeForm", () => {
           email: "jane.doe@example.com",
           department: "Sales",
           salary: 60000,
+          remoteWorkEligible: true,
         }}
       />,
     );
@@ -36,6 +37,7 @@ describe("EmployeeForm", () => {
     expect(screen.getByLabelText("Email")).toHaveValue("jane.doe@example.com");
     expect(screen.getByLabelText("Department")).toHaveValue("Sales");
     expect(screen.getByLabelText("Salary")).toHaveValue(60000);
+    expect(screen.getByLabelText("Remote work eligible")).toBeChecked();
   });
 
   it("submits the entered values as FormData to the action", async () => {
@@ -51,6 +53,7 @@ describe("EmployeeForm", () => {
     await user.type(screen.getByLabelText("Email"), "jane.doe@example.com");
     await user.type(screen.getByLabelText("Department"), "Sales");
     await user.type(screen.getByLabelText("Salary"), "60000");
+    await user.click(screen.getByLabelText("Remote work eligible"));
     await user.click(screen.getByRole("button", { name: "Create" }));
 
     expect(action).toHaveBeenCalledTimes(1);
@@ -60,6 +63,7 @@ describe("EmployeeForm", () => {
     expect(formData.get("email")).toBe("jane.doe@example.com");
     expect(formData.get("department")).toBe("Sales");
     expect(formData.get("salary")).toBe("60000");
+    expect(formData.get("remoteWorkEligible")).toBe("on");
   });
 
   it("shows the error returned by the action instead of navigating away", async () => {

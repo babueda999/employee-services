@@ -39,6 +39,25 @@ public class GlobalExceptionHandler {
     }
 
 
+    @ExceptionHandler(PendingConfirmationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePendingConfirmationNotFound(
+            PendingConfirmationNotFoundException exception,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "Pending Confirmation Not Found",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+
     @ExceptionHandler(DuplicateEmployeeException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateEmployee(
             DuplicateEmployeeException exception,

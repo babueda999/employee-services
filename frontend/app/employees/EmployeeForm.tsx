@@ -21,64 +21,79 @@ export default function EmployeeForm({
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
-    <form action={formAction} className={styles.form}>
-      {state.error && <p className={styles.error}>{state.error}</p>}
+    <div className={styles.formCard}>
+      <form action={formAction} className={styles.form}>
+        {state.error && <p className={styles.error}>{state.error}</p>}
 
-      <label className={styles.formField}>
-        First name
-        <input
-          name="firstName"
-          type="text"
-          required
-          defaultValue={initialValues?.firstName}
-        />
-      </label>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            First name
+            <input
+              name="firstName"
+              type="text"
+              required
+              defaultValue={initialValues?.firstName}
+            />
+          </label>
 
-      <label className={styles.formField}>
-        Last name
-        <input
-          name="lastName"
-          type="text"
-          required
-          defaultValue={initialValues?.lastName}
-        />
-      </label>
+          <label className={styles.formField}>
+            Last name
+            <input
+              name="lastName"
+              type="text"
+              required
+              defaultValue={initialValues?.lastName}
+            />
+          </label>
+        </div>
 
-      <label className={styles.formField}>
-        Email
-        <input
-          name="email"
-          type="email"
-          required
-          defaultValue={initialValues?.email}
-        />
-      </label>
+        <label className={styles.formField}>
+          Email
+          <input
+            name="email"
+            type="email"
+            required
+            defaultValue={initialValues?.email}
+          />
+        </label>
 
-      <label className={styles.formField}>
-        Department
-        <input
-          name="department"
-          type="text"
-          required
-          defaultValue={initialValues?.department}
-        />
-      </label>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            Department
+            <input
+              name="department"
+              type="text"
+              required
+              defaultValue={initialValues?.department}
+            />
+          </label>
 
-      <label className={styles.formField}>
-        Salary
-        <input
-          name="salary"
-          type="number"
-          step="0.01"
-          min="0.01"
-          required
-          defaultValue={initialValues?.salary}
-        />
-      </label>
+          <label className={styles.formField}>
+            Salary
+            <input
+              name="salary"
+              type="number"
+              step="0.01"
+              min="0.01"
+              required
+              defaultValue={initialValues?.salary}
+            />
+          </label>
+        </div>
 
-      <button type="submit" disabled={pending}>
-        {pending ? "Saving..." : submitLabel}
-      </button>
-    </form>
+        <label className={styles.checkboxField}>
+          <input
+            name="remoteWorkEligible"
+            type="checkbox"
+            defaultChecked={initialValues?.remoteWorkEligible ?? false}
+          />
+          Remote work eligible
+        </label>
+
+        <button type="submit" className={styles.submitButton} disabled={pending}>
+          {pending ? "Saving..." : submitLabel}
+        </button>
+      </form>
+    </div>
   );
 }

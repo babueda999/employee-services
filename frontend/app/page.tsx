@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getAllEmployees } from "@/lib/employees";
+import { getTokenUsage } from "@/lib/agent";
+import type { TokenUsage } from "@/types/agent";
 import EmployeeCountStat from "./EmployeeCountStat";
+import VoiceOverIntro from "./VoiceOverIntro";
 import styles from "./page.module.css";
 
 export default async function Home() {
@@ -12,6 +15,14 @@ export default async function Home() {
     employeeCount = null;
   }
 
+  let tokenUsage: TokenUsage | null = null;
+
+  try {
+    tokenUsage = await getTokenUsage();
+  } catch {
+    tokenUsage = null;
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -21,6 +32,8 @@ export default async function Home() {
           A clean front end for the Spring Boot Employee Service API — view,
           add, edit, and remove employees in a few clicks.
         </p>
+
+        <VoiceOverIntro tokenUsage={tokenUsage} />
 
         <EmployeeCountStat initialCount={employeeCount} />
 

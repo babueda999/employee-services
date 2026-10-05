@@ -110,6 +110,29 @@ class AuthorizationGuardrailTest {
                 .hasMessage("Only administrators can delete employees.");
     }
 
+    // --- checkConfirmationApprovalAccess ---
+
+    @Test
+    void checkConfirmationApprovalAccess_allowsManager() {
+        assertThatCode(() -> authorizationGuardrail.checkConfirmationApprovalAccess("MANAGER"))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"USER", "ADMIN"})
+    void checkConfirmationApprovalAccess_throwsSecurityException_whenRoleIsNotManager(String role) {
+        assertThatThrownBy(() -> authorizationGuardrail.checkConfirmationApprovalAccess(role))
+                .isInstanceOf(SecurityException.class)
+                .hasMessage("Only managers can approve or deny a pending confirmation.");
+    }
+
+    @Test
+    void checkConfirmationApprovalAccess_throwsSecurityException_whenRoleIsBlank() {
+        assertThatThrownBy(() -> authorizationGuardrail.checkConfirmationApprovalAccess("  "))
+                .isInstanceOf(SecurityException.class)
+                .hasMessage("User role is required.");
+    }
+
     // --- checkSalaryAdjustmentAccess ---
 
     @Test

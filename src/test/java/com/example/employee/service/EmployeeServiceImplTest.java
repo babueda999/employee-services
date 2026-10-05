@@ -48,19 +48,20 @@ class EmployeeServiceImplTest {
         request.setEmail("john.doe@example.com");
         request.setDepartment("Engineering");
         request.setSalary(75000.0);
+        request.setRemoteWorkEligible(true);
         return request;
     }
 
     private Employee sampleEmployee(Long id) {
         Employee employee = new Employee(
-                "John", "Doe", "john.doe@example.com", "Engineering", 75000.0);
+                "John", "Doe", "john.doe@example.com", "Engineering", 75000.0, true);
         employee.setId(id);
         return employee;
     }
 
     private EmployeeResponse sampleResponse(Long id) {
         return new EmployeeResponse(
-                id, "John", "Doe", "john.doe@example.com", "Engineering", 75000.0);
+                id, "John", "Doe", "john.doe@example.com", "Engineering", 75000.0, true);
     }
 
     // --- createEmployee ---

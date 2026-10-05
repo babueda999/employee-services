@@ -36,7 +36,7 @@ export default function DeleteEmployeeButton({
 
   return (
     <form action={formAction} className={styles.deleteConfirm}>
-      <span>Delete {name}?</span>
+      <span aria-live="polite">Delete {name}?</span>
       <button type="submit" className={styles.deleteButton} disabled={pending}>
         {pending ? "Deleting..." : "Confirm"}
       </button>

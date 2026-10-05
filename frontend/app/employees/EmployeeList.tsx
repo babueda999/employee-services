@@ -72,38 +72,58 @@ export default function EmployeeList({
       {!loadError && employees.length === 0 && <p>No employees found.</p>}
 
       {employees.length > 0 && (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Department</th>
-              <th>Salary</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map((employee) => (
-              <tr key={employee.id}>
-                <td>
-                  <Link href={`/employees/${employee.id}`}>
-                    {employee.firstName} {employee.lastName}
-                  </Link>
-                </td>
-                <td>{employee.email}</td>
-                <td>{employee.department}</td>
-                <td>{employee.salary.toLocaleString()}</td>
-                <td className={styles.rowActions}>
-                  <Link href={`/employees/${employee.id}/edit`}>Edit</Link>
-                  <DeleteEmployeeButton
-                    id={employee.id}
-                    name={`${employee.firstName} ${employee.lastName}`}
-                  />
-                </td>
+        <div className={styles.tableCard}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Salary</th>
+                <th>Remote</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {employees.map((employee) => (
+                <tr key={employee.id}>
+                  <td>
+                    <Link href={`/employees/${employee.id}`}>
+                      {employee.firstName} {employee.lastName}
+                    </Link>
+                  </td>
+                  <td>{employee.email}</td>
+                  <td>
+                    <span className={styles.deptPill}>{employee.department}</span>
+                  </td>
+                  <td className={styles.salaryCell}>
+                    {employee.salary.toLocaleString()}
+                  </td>
+                  <td>
+                    <span
+                      aria-hidden
+                      className={`${styles.remoteDot} ${
+                        employee.remoteWorkEligible ? styles.remoteDotActive : ""
+                      }`}
+                    />
+                    {employee.remoteWorkEligible === null
+                      ? "—"
+                      : employee.remoteWorkEligible
+                        ? "Yes"
+                        : "No"}
+                  </td>
+                  <td className={styles.rowActions}>
+                    <Link href={`/employees/${employee.id}/edit`}>Edit</Link>
+                    <DeleteEmployeeButton
+                      id={employee.id}
+                      name={`${employee.firstName} ${employee.lastName}`}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </>
   );

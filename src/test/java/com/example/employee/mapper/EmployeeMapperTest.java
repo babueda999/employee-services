@@ -18,6 +18,7 @@ class EmployeeMapperTest {
         request.setEmail("john.doe@example.com");
         request.setDepartment("Engineering");
         request.setSalary(75000.0);
+        request.setRemoteWorkEligible(true);
         return request;
     }
 
@@ -31,12 +32,13 @@ class EmployeeMapperTest {
         assertThat(entity.getEmail()).isEqualTo("john.doe@example.com");
         assertThat(entity.getDepartment()).isEqualTo("Engineering");
         assertThat(entity.getSalary()).isEqualTo(75000.0);
+        assertThat(entity.getRemoteWorkEligible()).isTrue();
     }
 
     @Test
     void toResponse_mapsAllFieldsIncludingId() {
         Employee entity = new Employee(
-                "John", "Doe", "john.doe@example.com", "Engineering", 75000.0);
+                "John", "Doe", "john.doe@example.com", "Engineering", 75000.0, true);
         entity.setId(42L);
 
         EmployeeResponse response = mapper.toResponse(entity);
@@ -47,12 +49,13 @@ class EmployeeMapperTest {
         assertThat(response.getEmail()).isEqualTo("john.doe@example.com");
         assertThat(response.getDepartment()).isEqualTo("Engineering");
         assertThat(response.getSalary()).isEqualTo(75000.0);
+        assertThat(response.getRemoteWorkEligible()).isTrue();
     }
 
     @Test
     void updateEntity_overwritesExistingFieldsInPlace() {
         Employee entity = new Employee(
-                "Old", "Name", "old@example.com", "Sales", 50000.0);
+                "Old", "Name", "old@example.com", "Sales", 50000.0, false);
         entity.setId(7L);
 
         EmployeeRequest request = sampleRequest();
@@ -64,5 +67,6 @@ class EmployeeMapperTest {
         assertThat(entity.getEmail()).isEqualTo("john.doe@example.com");
         assertThat(entity.getDepartment()).isEqualTo("Engineering");
         assertThat(entity.getSalary()).isEqualTo(75000.0);
+        assertThat(entity.getRemoteWorkEligible()).isTrue();
     }
 }

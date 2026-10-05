@@ -5,6 +5,7 @@ export interface Employee {
   email: string;
   department: string;
   salary: number;
+  remoteWorkEligible: boolean | null;
 }
 
 export interface CreateEmployeeRequest {
@@ -13,6 +14,7 @@ export interface CreateEmployeeRequest {
   email: string;
   department: string;
   salary: number;
+  remoteWorkEligible: boolean;
 }
 
 export type UpdateEmployeeRequest = CreateEmployeeRequest;

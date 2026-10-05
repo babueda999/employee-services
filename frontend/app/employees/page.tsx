@@ -20,8 +20,9 @@ export default async function EmployeesPage() {
 
   return (
     <main className={styles.main}>
-      <h1 className={styles.brand}>Sesha LLC</h1>
-      <h2>Employees</h2>
+      <div className={styles.pageHeader}>
+        <h1>Employees</h1>
+      </div>
 
       <EmployeeList initialEmployees={employees} initialError={loadError} />
 

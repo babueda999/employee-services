@@ -17,6 +17,7 @@ const jane: Employee = {
   email: "jane.doe@example.com",
   department: "Engineering",
   salary: 75000,
+  remoteWorkEligible: true,
 };
 
 const john: Employee = {
@@ -26,6 +27,7 @@ const john: Employee = {
   email: "john.smith@example.com",
   department: "Sales",
   salary: 62000,
+  remoteWorkEligible: false,
 };
 
 function jsonResponse(body: unknown, status = 200) {

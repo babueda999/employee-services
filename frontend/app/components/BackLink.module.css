@@ -1,0 +1,10 @@
+.backLink {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.backLink:hover {
+  color: var(--text-primary);
+}

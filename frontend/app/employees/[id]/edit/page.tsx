@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackLink from "@/app/components/BackLink";
 import { ApiError, getEmployeeById } from "@/lib/employees";
 import { updateEmployeeAction } from "../../actions";
 import EmployeeForm from "../../EmployeeForm";
@@ -26,12 +26,11 @@ export default async function EditEmployeePage(
 
   return (
     <main className={styles.main}>
-      <Link href={`/employees/${id}`} className={styles.backLink}>
-        &larr; Back to employee
-      </Link>
+      <BackLink href={`/employees/${id}`}>Back to employee</BackLink>
 
-      <h1 className={styles.brand}>Sesha LLC</h1>
-      <h2>Edit Employee</h2>
+      <div className={styles.pageHeader}>
+        <h2>Edit Employee</h2>
+      </div>
 
       <EmployeeForm
         action={boundAction}

@@ -45,12 +45,13 @@ class EmployeeControllerTest {
         request.setEmail("john.doe@example.com");
         request.setDepartment("Engineering");
         request.setSalary(75000.0);
+        request.setRemoteWorkEligible(true);
         return request;
     }
 
     private EmployeeResponse sampleResponse(Long id) {
         return new EmployeeResponse(
-                id, "John", "Doe", "john.doe@example.com", "Engineering", 75000.0);
+                id, "John", "Doe", "john.doe@example.com", "Engineering", 75000.0, true);
     }
 
     // --- POST /api/employees ---

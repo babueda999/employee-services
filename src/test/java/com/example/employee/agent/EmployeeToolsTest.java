@@ -38,7 +38,7 @@ class EmployeeToolsTest {
 
     private EmployeeResponse sampleResponse(Long id) {
         return new EmployeeResponse(
-                id, "John", "Doe", "john.doe@example.com", "Engineering", 75000.0);
+                id, "John", "Doe", "john.doe@example.com", "Engineering", 75000.0, true);
     }
 
     // --- getEmployee ---
@@ -113,7 +113,7 @@ class EmployeeToolsTest {
     void searchEmployees_returnsOnlyMatchingEmployees_whenNameProvided() {
         EmployeeResponse john = sampleResponse(1L);
         EmployeeResponse jane = new EmployeeResponse(
-                2L, "Jane", "Smith", "jane.smith@example.com", "Sales", 65000.0);
+                2L, "Jane", "Smith", "jane.smith@example.com", "Sales", 65000.0, false);
         when(employeeService.getAllEmployees())
                 .thenReturn(List.of(john, jane));
 
@@ -136,7 +136,7 @@ class EmployeeToolsTest {
     void searchEmployees_returnsOnlyMatchingEmployees_whenDepartmentProvided() {
         EmployeeResponse john = sampleResponse(1L);
         EmployeeResponse jane = new EmployeeResponse(
-                2L, "Jane", "Smith", "jane.smith@example.com", "Sales", 65000.0);
+                2L, "Jane", "Smith", "jane.smith@example.com", "Sales", 65000.0, false);
         when(employeeService.getAllEmployees())
                 .thenReturn(List.of(john, jane));
 
@@ -159,7 +159,7 @@ class EmployeeToolsTest {
     void searchEmployees_appliesBothFilters_whenNameAndDepartmentProvided() {
         EmployeeResponse john = sampleResponse(1L);
         EmployeeResponse johnSales = new EmployeeResponse(
-                2L, "John", "Appleseed", "john.appleseed@example.com", "Sales", 65000.0);
+                2L, "John", "Appleseed", "john.appleseed@example.com", "Sales", 65000.0, false);
         when(employeeService.getAllEmployees())
                 .thenReturn(List.of(john, johnSales));
 

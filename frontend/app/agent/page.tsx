@@ -1,15 +1,14 @@
-import Link from "next/link";
 import AgentChatBox from "./AgentChatBox";
 import styles from "./agent.module.css";
 
 export default function AgentPage() {
   return (
     <main className={styles.main}>
-      <Link href="/" className={styles.backLink}>
-        &larr; Back home
-      </Link>
-
-      <h1 className={styles.brand}>Employee Agent</h1>
+      <h1 className={styles.title}>Employee Agent</h1>
+      <p className={styles.subtitle}>
+        Ask questions, update records, or request a change — the assistant picks
+        the right tool and asks for approval on sensitive actions.
+      </p>
 
       <AgentChatBox />
     </main>
