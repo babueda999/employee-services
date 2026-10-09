@@ -28,6 +28,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -227,22 +229,40 @@ public class EmployeeSupervisorAgent {
                         cappedReply, effectiveConversationId, false, null, List.copyOf(toolsUsed));
             }
 
+            // Independent tool calls within the same round are dispatched
+            // concurrently so the round's latency is the max of the calls
+            // rather than their sum. The futures are all started before any
+            // is joined (two separate stream stages below), and results are
+            // then applied in the model's original order so toolResults/
+            // toolsUsed/pendingConfirmationToken stay deterministic.
+            List<CompletableFuture<ToolCallOutcome>> toolFutures =
+                    functionCalls.stream()
+                            .map(functionCall -> CompletableFuture.supplyAsync(() ->
+                                    new ToolCallOutcome(
+                                            functionCall,
+                                            executeTool(
+                                                    functionCall.name(),
+                                                    functionCall.arguments(),
+                                                    effectiveRole,
+                                                    effectiveConversationId
+                                            )
+                                    )))
+                            .toList();
+
+            List<ToolCallOutcome> toolOutcomes =
+                    toolFutures.stream().map(this::joinUnwrapped).toList();
+
             List<ResponseInputItem> toolResults = new ArrayList<>();
             boolean confirmationRequestedThisRound = false;
 
-            for (ResponseFunctionToolCall functionCall : functionCalls) {
+            for (ToolCallOutcome outcome : toolOutcomes) {
+
+                ResponseFunctionToolCall functionCall = outcome.functionCall();
+                ToolExecutionResult result = outcome.result();
 
                 if (subAgentsByName.containsKey(functionCall.name())) {
                     toolsUsed.add(functionCall.name());
                 }
-
-                ToolExecutionResult result =
-                        executeTool(
-                                functionCall.name(),
-                                functionCall.arguments(),
-                                effectiveRole,
-                                effectiveConversationId
-                        );
 
                 toolResults.add(
                         ResponseInputItem.ofFunctionCallOutput(
@@ -414,6 +434,40 @@ public class EmployeeSupervisorAgent {
 
         static ToolExecutionResult plain(String outputForModel) {
             return new ToolExecutionResult(outputForModel, null);
+        }
+    }
+
+    /**
+     * Pairs a model-requested tool call with its (concurrently computed)
+     * result, so results can be re-applied in the original, deterministic
+     * order after all of a round's calls have been joined.
+     */
+    private record ToolCallOutcome(ResponseFunctionToolCall functionCall, ToolExecutionResult result) {
+    }
+
+    /**
+     * Joins a tool-execution future, unwrapping {@link CompletionException}
+     * so a failure (e.g. {@link SecurityException} from an unauthorized
+     * tool call) propagates out of {@link #process} exactly as it did when
+     * tool calls ran synchronously — {@link GlobalExceptionHandler} matches
+     * on the original exception type, not a wrapper.
+     */
+    private <T> T joinUnwrapped(CompletableFuture<T> future) {
+
+        try {
+            return future.join();
+        } catch (CompletionException ex) {
+
+            Throwable cause = ex.getCause();
+
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+
+            throw ex;
         }
     }
 
